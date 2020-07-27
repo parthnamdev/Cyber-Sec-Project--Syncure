@@ -31,6 +31,6 @@ const articleSchema = {
 
 app.use("/api/user", userRouter);
 app.use("/api/article", articleRouter);
-app.listen(5000, function() {
+app.listen(5000 || process.env.PORT, function() {
     console.log("Server connected at port 5000...");
 });
