@@ -46,7 +46,8 @@ const add = (req, res) => {
                 } else {
                     const newUser = new User({
                         username: req.body.username,
-                        password: req.body.password
+                        password: req.body.password,
+                        email: req.body.email
                     });
                     const newArticle = new Article({
                         username: req.body.username,
