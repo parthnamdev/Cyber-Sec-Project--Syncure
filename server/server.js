@@ -1,15 +1,20 @@
+require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const path = require('path')
 const morgan = require("morgan");
 const userRouter = require("./routes/userRoutes");
 const articleRouter = require("./routes/articleRoutes");
-
+const cors = require('cors');
+const expressSession = require('express-session');
+const { body, validationResult } = require('express-validator');
 const app = express();
-app.use( '/uploads', express.static(__dirname + "/uploads"));
+app.use(cors());
 
 app.use(bodyParser.urlencoded({extended:true}));
+
+app.use( '/uploads', express.static(__dirname + "/uploads"));
+app.use(expressSession({secret: process.env.SESSION_SECRET, saveUninitialized: false, resave: false}));
 
 mongoose.connect("mongodb://localhost:27017/projDB", { useNewUrlParser:true, useUnifiedTopology:true });
 const db = mongoose.connection;

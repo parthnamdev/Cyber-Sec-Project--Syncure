@@ -2,6 +2,7 @@ const User = require('../models/userModel');
 const Article = require('../models/articleModel');
 const fs = require('fs');
 const getSize = require('get-folder-size');
+const { body, validationResult } = require('express-validator');
 
 const index = (req, res, next) => {
     User.find(function(err, foundUsers) {
@@ -39,39 +40,45 @@ const add = (req, res) => {
                     message: "username already exist !"
                 });
             } else {
-                const newUser = new User({
-                    username: req.body.username,
-                    password: req.body.password
-                });
-                const newArticle = new Article({
-                    username: req.body.username,
-                });
-                const folder = `${"./uploads/" + req.body.username}`;
-            
-                fs.mkdir(folder, {recursive: true}, function(err) {
-                    if(err) throw err;
-                });
-            
-                newUser.save(function(err) {
-                    if(!err){
-                        console.log("succesfully added new user");
-                    } else {
-                        res.json({
-                            error: err
-                        });
-                    }
-                });
-                newArticle.save(function(err) {
-                    if(!err){
-                        res.json({
-                            message: "succesfully added new user"
-                        });
-                    } else {
-                        res.json({
-                            error: err
-                        });
-                    }
-                });
+                const errors = validationResult(req);
+                if (!errors.isEmpty()) {
+                  return res.status(400).json({ errors: errors.array() });
+                } else {
+                    const newUser = new User({
+                        username: req.body.username,
+                        password: req.body.password
+                    });
+                    const newArticle = new Article({
+                        username: req.body.username,
+                    });
+                    const folder = `${"./uploads/" + req.body.username}`;
+                
+                    fs.mkdir(folder, {recursive: true}, function(err) {
+                        if(err) throw err;
+                    });
+                
+                    newUser.save(function(err) {
+                        if(!err){
+                            console.log("succesfully added new user");
+                        } else {
+                            res.json({
+                                error: err
+                            });
+                        }
+                    });
+                    newArticle.save(function(err) {
+                        if(!err){
+                            res.json({
+                                message: "succesfully added new user"
+                            });
+                        } else {
+                            res.json({
+                                error: err
+                            });
+                        }
+                    });
+                }
+                
             }
         }
     });
