@@ -9,12 +9,24 @@ router.get('/', userController.index);
 router.get('/find/:username', userController.find);
 router.get('/storage/:username', userController.storage);
 router.post('/add', [
-                        body('email', 'invalid email').isEmail(),
-                        body('password', 'password should be minimum of 6 characters').isLength({min: 6}),
-                        body('username').notEmpty()
-                    ], userController.add);
-router.post('/updateUsername', userController.updateUsername);
-router.post('/updatePassword', userController.updatePassword);
-router.post('/remove', userController.remove);
+        body('email', 'invalid email').isEmail(),
+        body('password', 'password should be minimum of 6 characters').isLength({min: 6}),
+        body('username').notEmpty()
+    ], userController.add);
+router.post('/updateUsername', [
+        body('newUsername').notEmpty(),
+        body('username').notEmpty()
+    ], userController.updateUsername);
+router.post('/updatePassword', [
+        body('newPassword', 'password should be minimum of 6 characters').isLength({min: 6}),
+        body('username').notEmpty()
+    ], userController.updatePassword);
+router.post('/updateEmail', [
+        body('newEmail', 'invalid email').isEmail(),
+        body('username').notEmpty()
+    ], userController.updateEmail);
+router.post('/remove', [
+        body('username').notEmpty()
+    ], userController.remove);
 
 module.exports = router;

@@ -88,82 +88,133 @@ const add = (req, res) => {
 }
 
 const updateUsername = (req, res) => {
-
-    User.updateOne({username: req.body.username},  
-        {username: req.body.newUsername}, function (err, docs) { 
-        if (err){ 
-            console.log(err) 
-        } 
-        else{
-            const currPath = `${"./uploads/" + req.body.username}`;
-            const newPath = `${"./uploads/" + req.body.newUsername}`;
-            fs.rename(currPath, newPath, function(err) {
-                if (err) {
-                  console.log(err)
-                } else {
-                  console.log("Successfully renamed the directory.")
-                }
-              }) 
-            console.log("Updated username successfully");
-        } 
-    });
-    Article.updateOne({username: req.body.username},  
-        {username: req.body.newUsername}, function (err, docs) { 
-        if (err){ 
-            console.log(err) 
-        } 
-        else{
+    User.findOne( {username: req.body.newUsername}, function(err, foundUser) {
+        if(err) {
             res.json({
-                message: "Updated username successfully",
-                docs: docs
+                error: err
             });
-        } 
+        } else {
+            if(foundUser) {
+                res.json({
+                    message: "username already exist !"
+                });
+            } else {
+                const errors = validationResult(req);
+                if (!errors.isEmpty()) {
+                  return res.status(400).json({ errors: errors.array() });
+                } else {
+                    User.updateOne({username: req.body.username},  
+                        {username: req.body.newUsername}, function (err, docs) { 
+                        if (err){ 
+                            console.log(err) 
+                        } 
+                        else{
+                            const currPath = `${"./uploads/" + req.body.username}`;
+                            const newPath = `${"./uploads/" + req.body.newUsername}`;
+                            fs.rename(currPath, newPath, function(err) {
+                                if (err) {
+                                  console.log(err)
+                                } else {
+                                  console.log("Successfully renamed the directory.")
+                                }
+                              }) 
+                            console.log("Updated username successfully");
+                        } 
+                    });
+                    Article.updateOne({username: req.body.username},  
+                        {username: req.body.newUsername}, function (err, docs) { 
+                        if (err){ 
+                            console.log(err) 
+                        } 
+                        else{
+                            res.json({
+                                message: "Updated username successfully",
+                                docs: docs
+                            });
+                        } 
+                    });
+                }
+                
+            }
+        }
     });
 }
 
 const updatePassword = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    } else {
+        User.updateOne({username: req.body.username},  
+            {password: req.body.newPassword}, function (err, docs) { 
+            if (err){ 
+                console.log(err) 
+            } 
+            else{ 
+                res.json({
+                    message: "Updated password successfully",
+                    docs: docs
+                }); 
+            } 
+        }); 
+    }
+    
+}
 
-    User.updateOne({username: req.body.username},  
-        {password: req.body.newPassword}, function (err, docs) { 
-        if (err){ 
-            console.log(err) 
-        } 
-        else{ 
-            res.json({
-                message: "Updated password successfully",
-                docs: docs
-            }); 
-        } 
-    }); 
+const updateEmail = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    } else {
+        User.updateOne({username: req.body.username},  
+            {email: req.body.newEmail}, function (err, docs) { 
+            if (err){ 
+                console.log(err) 
+            } 
+            else{ 
+                res.json({
+                    message: "Updated email successfully",
+                    docs: docs
+                }); 
+            } 
+        });
+    }
 }
 
 const remove = (req, res) => {
-    User.deleteOne( {username: req.body.username}, function(err) {
-        if(!err) {
-            const folderToDelete = `${"./uploads/" + req.body.username}`;
-
-            fs.rmdir(folderToDelete, {recursive: true}, function(err) {
-                if(err) throw err;
-            });
-            console.log("succesfully deleted user");
-        } else {
-            res.json({
-                error: err
-            });
-        }
-    });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    } else {
+        User.deleteOne( {username: req.body.username}, function(err) {
+            if(!err) {
+                const folderToDelete = `${"./uploads/" + req.body.username}`;
     
-    Article.deleteOne( {username: req.body.username}, function(err) {
-        if(!err) {
-            res.json({
-                message: "successfully deleted user and all articles"
-            });
-        } else {
-            res.json({
-                error: err
-            });
-        }
-    });
+                fs.rmdir(folderToDelete, {recursive: true}, function(err) {
+                    if(err) throw err;
+                });
+                console.log("succesfully deleted user");
+            } else {
+                res.json({
+                    error: err,
+                    message: "user not found"
+                });
+            }
+        });
+        
+        Article.deleteOne( {username: req.body.username}, function(err) {
+            if(!err) {
+                res.json({
+                    message: "successfully deleted user and all articles"
+                });
+            } else {
+                res.json({
+                    error: err
+                });
+            }
+        }); 
+    }
+    
 }
 
 const storage = (req, res) => {
@@ -181,5 +232,5 @@ const storage = (req, res) => {
 }
 
 module.exports = {
-    index, find, add, updateUsername, updatePassword, remove, storage
+    index, find, add, updateUsername, updatePassword, remove, storage, updateEmail
 }

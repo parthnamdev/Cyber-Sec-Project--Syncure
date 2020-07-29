@@ -1,5 +1,6 @@
 const Article = require('../models/articleModel');
 const fs = require('fs');
+const { body, validationResult } = require('express-validator');
 
 const index = (req, res, next) => {
     Article.find(function(err, foundArticles) {
