@@ -3,11 +3,12 @@ const Article = require('../models/articleModel');
 const fs = require('fs');
 const getSize = require('get-folder-size');
 const { body, validationResult } = require('express-validator');
+const passport = require('passport');
 
 const index = (req, res, next) => {
     User.find(function(err, foundUsers) {
         if(!err) {
-            res.json(foundUsers);
+                res.json(foundUsers);
         } else {
             res.json({
                 error: err
@@ -28,7 +29,7 @@ const find = (req, res) => {
     });
 }
 
-const add = (req, res) => {
+const register = (req, res) => {
     User.findOne( {username: req.body.username}, function(err, foundUser) {
         if(err) {
             res.json({
@@ -44,11 +45,22 @@ const add = (req, res) => {
                 if (!errors.isEmpty()) {
                   return res.status(400).json({ errors: errors.array() });
                 } else {
-                    const newUser = new User({
-                        username: req.body.username,
-                        password: req.body.password,
-                        email: req.body.email
+                    User.register({username: req.body.username, email: req.body.email}, req.body.password, function(err, user){
+                        if(err){
+                            res.json({
+                                error: err
+                            });
+                        } else{
+                            passport.authenticate("local")(req, res, function(){
+                                console.log("succesfully added new user");
+                            });
+                        }
                     });
+                    // const newUser = new User({
+                    //     username: req.body.username,
+                    //     password: req.body.password,
+                    //     email: req.body.email
+                    // });
                     const newArticle = new Article({
                         username: req.body.username,
                     });
@@ -58,15 +70,15 @@ const add = (req, res) => {
                         if(err) throw err;
                     });
                 
-                    newUser.save(function(err) {
-                        if(!err){
-                            console.log("succesfully added new user");
-                        } else {
-                            res.json({
-                                error: err
-                            });
-                        }
-                    });
+                    // newUser.save(function(err) {
+                    //     if(!err){
+                    //         console.log("succesfully added new user");
+                    //     } else {
+                    //         res.json({
+                    //             error: err
+                    //         });
+                    //     }
+                    // });
                     newArticle.save(function(err) {
                         if(!err){
                             res.json({
@@ -236,5 +248,5 @@ const storage = (req, res) => {
 }
 
 module.exports = {
-    index, find, add, updateUsername, updatePassword, remove, storage, updateEmail
+    index, find, register, updateUsername, updatePassword, remove, storage, updateEmail
 }

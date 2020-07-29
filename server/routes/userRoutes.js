@@ -4,15 +4,16 @@ const { body, validationResult } = require('express-validator');
 
 
 const userController = require('../controllers/userController');
+const authenticate = require('../middleware/authenticate');
 
-router.get('/', userController.index);
+router.get('/', authenticate, userController.index);
 router.get('/find/:username', userController.find);
 router.get('/storage/:username', userController.storage);
-router.post('/add', [
+router.post('/register', [
         body('email', 'invalid email').isEmail(),
         body('password', 'password should be minimum of 6 characters').isLength({min: 6}),
         body('username').notEmpty()
-    ], userController.add);
+    ], userController.register);
 router.post('/updateUsername', [
         body('newUsername').notEmpty(),
         body('username').notEmpty()
