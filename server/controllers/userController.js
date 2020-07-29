@@ -223,10 +223,14 @@ const storage = (req, res) => {
         if (err) {throw err;}
        
         const bytes = size + ' bytes';
-        const megaBytes = (size / 1024 / 1024).toFixed(2) + ' MB';
+        const megaBytes = (size / 1024 / 1024).toFixed(2) + ' mB';
+        const available_storage = (100 * 1024 * 1024) - size;
+        const available_storage_mb = (available_storage/ 1024/ 1024).toFixed(2) + 'mB';
         res.json({
             bytes: bytes,
-            megaBytes: megaBytes
+            megaBytes: megaBytes,
+            available_storage: `${available_storage}` + " bytes",
+            available_storage_mb: available_storage_mb
         });
       });
 }
