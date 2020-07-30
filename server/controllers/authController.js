@@ -41,23 +41,19 @@ const login = (req, res, next) => {
 }
 
 const mail = (req, res) => {
-
-    const userPass = process.env.MAIL_PASS
-    const userMail = process.env.MAIL_USER
-
-    var transporter = nodemailer.createTransport({
-        service: "yandex",
+    const transporter = nodemailer.createTransport({
+        service: "SendGrid",
         auth: {
-          user: userMail,
-          pass: userPass,
+          user: process.env.MAIL_USERNAME,
+          pass: process.env.MAIL_PASS,
         },
       });
     
-      var mailOptions = {
-        from: `${userMail}`, // sender address
-        to: 'cofom84464@demail3.com', // list of receivers
-        subject: 'Hello ✔', // Subject line
-        text: 'Hello world?' // plain text body
+      const mailOptions = {
+        from: process.env.MAIL_USER, 
+        to: 'bolodov232@brbqx.com', 
+        subject: 'Hello ✔', 
+        text: 'Hello world?' 
         //html: "<b>Hello world?</b>", // html body
       };
     
