@@ -1,6 +1,7 @@
 const User = require("../models/userModel");
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
+const nodemailer = require("nodemailer");
 
 const login = (req, res, next) => {
     User.findOne({username: req.body.username}, function(err, foundUser){
@@ -19,12 +20,13 @@ const login = (req, res, next) => {
                         });
                     } else{
                        passport.authenticate("local")(req, res, function(){
-                            const token = jwt.sign({username: user.username}, process.env.JWT_SECRET, {expiresIn: '15m'} )
-                            res.json({
-                            meassge: "logged in successfully",
-                            token: token
-                        });
-                    
+                           const userRedirect = 'verify/' + user.username;
+                            res.redirect(userRedirect);
+                        //     const token = jwt.sign({username: user.username}, process.env.JWT_SECRET, {expiresIn: '15m'} )
+                        //     res.json({
+                        //     meassge: "logged in successfully",
+                        //     token: token
+                        // });
                        }); 
                     
                     }
@@ -38,6 +40,55 @@ const login = (req, res, next) => {
     });
 }
 
+const mail = (req, res) => {
+
+    let transporter = nodemailer.createTransport({
+        auth: {
+          user: `${process.env.MAIL_USER}`,
+          pass: `${process.env.MAIL_PASS}`,
+        },
+      });
+    
+      let mailOptions = {
+        from: `${process.env.MAIL_USER}`, // sender address
+        to: '', // list of receivers
+        subject: 'Hello ✔', // Subject line
+        text: 'Hello world?' // plain text body
+        //html: "<b>Hello world?</b>", // html body
+      };
+    
+      transporter.sendMail(mailOptions, function(err, info) {
+          if(err){
+              res.json({
+                  error: err
+              });
+          } else {
+            console.log("Message sent: %s", info.messageId);
+              res.json({
+                  message: "mail sent",
+                  response: info.response
+              })
+          }
+      });
+      
+}
+
+const twoStepVerification = (req, res) => {
+    if(req.isAuthenticated()){
+        console.log(req.params.username);
+        const token = jwt.sign({username: req.params.username}, process.env.JWT_SECRET, {expiresIn: '15m'} )
+        res.json({
+        meassge: "logged in successfully",
+        token: token
+    });
+    } else {
+        res.json({
+            message: "unauthorised"
+        })
+    }
+    
+}
+
 const logout = (req, res) => {
     req.logout();
     res.json({
@@ -46,5 +97,5 @@ const logout = (req, res) => {
 }
 
 module.exports = {
-    login, logout
+    login, logout, twoStepVerification, mail
 }
