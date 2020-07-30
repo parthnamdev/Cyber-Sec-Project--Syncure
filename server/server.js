@@ -19,7 +19,7 @@ const authRouter = require('./routes/authRoutes');
 app.use(bodyParser.urlencoded({extended:true}));
 
 app.use( '/uploads', express.static(__dirname + "/uploads"));
-app.use(expressSession({secret: process.env.SESSION_SECRET, saveUninitialized: false, resave: false}));
+app.use(expressSession({secret: "lol.odaslfalsdfladlsflalsdf", saveUninitialized: false, resave: false}));
 app.use(passport.initialize());
 app.use(passport.session());
 

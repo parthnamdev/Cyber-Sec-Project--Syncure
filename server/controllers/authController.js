@@ -42,16 +42,20 @@ const login = (req, res, next) => {
 
 const mail = (req, res) => {
 
-    let transporter = nodemailer.createTransport({
+    const userPass = process.env.MAIL_PASS
+    const userMail = process.env.MAIL_USER
+
+    var transporter = nodemailer.createTransport({
+        service: "yandex",
         auth: {
-          user: `${process.env.MAIL_USER}`,
-          pass: `${process.env.MAIL_PASS}`,
+          user: userMail,
+          pass: userPass,
         },
       });
     
-      let mailOptions = {
-        from: `${process.env.MAIL_USER}`, // sender address
-        to: '', // list of receivers
+      var mailOptions = {
+        from: `${userMail}`, // sender address
+        to: 'cofom84464@demail3.com', // list of receivers
         subject: 'Hello ✔', // Subject line
         text: 'Hello world?' // plain text body
         //html: "<b>Hello world?</b>", // html body
