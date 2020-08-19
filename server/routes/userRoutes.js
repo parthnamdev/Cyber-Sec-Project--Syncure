@@ -5,8 +5,9 @@ const { body, validationResult } = require('express-validator');
 
 const userController = require('../controllers/userController');
 const authenticate = require('../middleware/authenticate');
+//const admin = require('../middleware/admin');
 
-router.get('/', authenticate, userController.index);
+//router.get('/', admin, userController.index);
 router.get('/find/:username', userController.find);
 router.get('/storage/:username', userController.storage);
 router.post('/register', [

@@ -4,17 +4,17 @@ const { body, validationResult } = require('express-validator');
 const getSize = require('get-folder-size');
 
 
-const index = (req, res, next) => {
-    Article.find(function(err, foundArticles) {
-        if(!err) {
-            res.json(foundArticles);
-        } else {
-            res.json({
-                error: err
-            });
-        }
-    });
-}
+// const index = (req, res, next) => {
+//     Article.find(function(err, foundArticles) {
+//         if(!err) {
+//             res.json(foundArticles);
+//         } else {
+//             res.json({
+//                 error: err
+//             });
+//         }
+//     });
+// }
 
 const find = (req, res) => {
     Article.findOne( {username: req.params.username}, function(err, foundArticle) {
@@ -244,5 +244,5 @@ const removePassword = (req, res) => {
 }
 
 module.exports = {
-    index, find, addMedia, addPassword, removeMedia, removePassword, findMedia, findPassword
+    find, addMedia, addPassword, removeMedia, removePassword, findMedia, findPassword
 }

@@ -3,9 +3,10 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 
 const articleController = require('../controllers/articleController');
-const upload = require("../middleware/upload")
+const upload = require("../middleware/upload");
+//const admin = require('../middleware/admin');
 
-router.get('/', articleController.index);
+//router.get('/', articleController.index);
 router.get('/find/:username', articleController.find);
 router.post('/addMedia', upload.single('media'), [
     body('username').notEmpty()

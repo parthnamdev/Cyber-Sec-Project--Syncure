@@ -5,17 +5,17 @@ const getSize = require('get-folder-size');
 const { body, validationResult } = require('express-validator');
 const passport = require('passport');
 
-const index = (req, res, next) => {
-    User.find(function(err, foundUsers) {
-        if(!err) {
-                res.json(foundUsers);
-        } else {
-            res.json({
-                error: err
-            });
-        }
-    });
-}
+// const index = (req, res, next) => {
+//     User.find(function(err, foundUsers) {
+//         if(!err) {
+//                 res.json(foundUsers);
+//         } else {
+//             res.json({
+//                 error: err
+//             });
+//         }
+//     });
+// }
 
 const find = (req, res) => {
     User.findOne( {username: req.params.username}, function(err, foundUser) {
@@ -248,5 +248,5 @@ const storage = (req, res) => {
 }
 
 module.exports = {
-    index, find, register, updateUsername, updatePassword, remove, storage, updateEmail
+    find, register, updateUsername, updatePassword, remove, storage, updateEmail
 }

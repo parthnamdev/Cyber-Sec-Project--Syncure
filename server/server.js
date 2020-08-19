@@ -15,6 +15,7 @@ app.use(helmet());
 const userRouter = require("./routes/userRoutes");
 const articleRouter = require("./routes/articleRoutes");
 const authRouter = require('./routes/authRoutes');
+const adminRouter = require('./routes/adminRoutes');
 
 app.use(bodyParser.urlencoded({extended:true}));
 
@@ -44,7 +45,7 @@ const articleSchema = {
 app.use("/api/user", userRouter);
 app.use("/api/article", articleRouter);
 app.use("/api", authRouter);
-
+app.use("/admin", adminRouter);
 app.listen(5000 || process.env.PORT, function() {
     console.log("Server connected at port 5000...");
 });
