@@ -1,7 +1,6 @@
 const User = require('../models/userModel');
 const Article = require('../models/articleModel');
 const fs = require('fs');
-const getSize = require('get-folder-size');
 const { body, validationResult } = require('express-validator');
 const passport = require('passport');
 
@@ -63,6 +62,7 @@ const register = (req, res) => {
                     // });
                     const newArticle = new Article({
                         username: req.body.username,
+                        memoryUsed: "0.00"
                     });
                     const folder = `${"./uploads/" + req.body.username}`;
                 
@@ -272,21 +272,20 @@ const remove = (req, res) => {
 }
 
 const storage = (req, res) => {
-    const myFolder = `${"./uploads/" + req.params.username}`;
-    getSize(myFolder, (err, size) => {
-        if (err) {throw err;}
-       
-        const bytes = size + ' bytes';
-        const megaBytes = (size / 1024 / 1024).toFixed(2) + ' mB';
-        const available_storage = (100 * 1024 * 1024) - size;
-        const available_storage_mb = (available_storage/ 1024/ 1024).toFixed(2) + 'mB';
-        res.json({
-            bytes: bytes,
-            megaBytes: megaBytes,
-            available_storage: `${available_storage}` + " bytes",
-            available_storage_mb: available_storage_mb
-        });
-      });
+      Article.findOne( {username: req.params.username}, function(err, foundArticle) {
+        if(!err && foundArticle) {
+            res.json({
+                memoryUsed: foundArticle.memoryUsed,
+                remaining: (100 - parseFloat(foundArticle.memoryUsed)).toString(),
+                unit: "megaBytes"
+            });
+        } else {
+            res.json({
+                message: "no user or article found",
+                error: err
+            });
+        }
+    });
 }
 
 module.exports = {

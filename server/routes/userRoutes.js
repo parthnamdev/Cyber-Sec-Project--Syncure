@@ -16,23 +16,23 @@ router.post('/register', [
         body('username','it should be 10 digit number').isLength(10).isNumeric()
     ], userController.register);
 router.post('/updateUsername', [
-        body('newUsername').notEmpty(),
-        body('username').notEmpty()
+        body('newUsername','it should be 10 digit number').isLength(10).isNumeric(),
+        body('username','it should be 10 digit number').isLength(10).isNumeric()
     ], userController.updateUsername);
 router.post('/updatePassword', [
         body('newPassword', 'password should be minimum of 6 characters').isLength({min: 6}),
-        body('username').notEmpty()
+        body('username','it should be 10 digit number').isLength(10).isNumeric()
     ], userController.updatePassword);
 router.post('/updateEmail', [
         body('newEmail', 'invalid email').isEmail(),
-        body('username').notEmpty(),
+        body('username','it should be 10 digit number').isLength(10).isNumeric()
     ], userController.updateEmail);
 router.post('/updateName', [
     body('newName', 'invalid name').notEmpty(),
-    body('username').notEmpty(),
+    body('username','it should be 10 digit number').isLength(10).isNumeric()
 ], userController.updateName);
 router.post('/remove', [
-        body('username').notEmpty()
+    body('username','it should be 10 digit number').isLength(10).isNumeric()
     ], userController.remove);
 
 module.exports = router;

@@ -9,26 +9,26 @@ const upload = require("../middleware/upload");
 //router.get('/', articleController.index);
 router.get('/find/:username', articleController.find);
 router.post('/addMedia', upload.single('media'), [
-    body('username').notEmpty()
+    body('username','it should be 10 digit number').isLength(10).isNumeric()
     ], articleController.addMedia);
 router.post('/addPassword', [
-    body('username').notEmpty(),
+    body('username','it should be 10 digit number').isLength(10).isNumeric(),
     body('passwordCode').notEmpty()
     ], articleController.addPassword);
 router.post('/removeMedia', [
-    body('username').notEmpty(),
+    body('username','it should be 10 digit number').isLength(10).isNumeric(),
     body('id').notEmpty()
     ], articleController.removeMedia);
 router.post('/removePassword', [
-    body('username').notEmpty(),
+    body('username','it should be 10 digit number').isLength(10).isNumeric(),
     body('id').notEmpty()
     ], articleController.removePassword);
 router.post('/findMedia', [
-    body('username').notEmpty(),
+    body('username','it should be 10 digit number').isLength(10).isNumeric(),
     body('id').notEmpty()
     ], articleController.findMedia);
 router.post('/findPassword', [
-    body('username').notEmpty(),
+    body('username','it should be 10 digit number').isLength(10).isNumeric(),
     body('id').notEmpty()
     ], articleController.findPassword);
 
