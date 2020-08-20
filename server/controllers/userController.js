@@ -45,7 +45,7 @@ const register = (req, res) => {
                 if (!errors.isEmpty()) {
                   return res.status(400).json({ errors: errors.array() });
                 } else {
-                    User.register({username: req.body.username, email: req.body.email}, req.body.password, function(err, user){
+                    User.register({username: req.body.username, email: req.body.email , name: req.body.name}, req.body.password, function(err, user){
                         if(err){
                             res.json({
                                 error: err
@@ -163,10 +163,17 @@ const updatePassword = (req, res) => {
                 console.log(err) 
             } 
             else{ 
-                res.json({
-                    message: "Updated password successfully",
-                    docs: docs
-                }); 
+                if(docs.n !== 0){
+                    res.json({
+                        message: "Updated password successfully",
+                        docs: docs
+                    });
+                } else {
+                    res.json({
+                        message: "user not found or update fail",
+                        docs: docs
+                    });
+                }  
             } 
         }); 
     }
@@ -184,14 +191,49 @@ const updateEmail = (req, res) => {
                 console.log(err) 
             } 
             else{ 
-                res.json({
-                    message: "Updated email successfully",
-                    docs: docs
-                }); 
+                if(docs.n !== 0){
+                    res.json({
+                        message: "Updated email successfully",
+                        docs: docs
+                    });
+                } else {
+                    res.json({
+                        message: "user not found or update fail",
+                        docs: docs
+                    });
+                } 
             } 
         });
     }
 }
+
+const updateName = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    } else {
+        User.updateOne({username: req.body.username},  
+            {name: req.body.newName}, function (err, docs) { 
+            if (err){ 
+                console.log(err) 
+            } 
+            else{
+                if(docs.n !== 0){
+                    res.json({
+                        message: "Updated name successfully",
+                        docs: docs
+                    });
+                } else {
+                    res.json({
+                        message: "user not found or update fail",
+                        docs: docs
+                    });
+                } 
+                 
+            } 
+        });
+    }
+} 
 
 const remove = (req, res) => {
     const errors = validationResult(req);
@@ -248,5 +290,5 @@ const storage = (req, res) => {
 }
 
 module.exports = {
-    find, register, updateUsername, updatePassword, remove, storage, updateEmail
+    find, register, updateUsername, updatePassword, remove, storage, updateEmail, updateName
 }

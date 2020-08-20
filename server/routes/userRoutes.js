@@ -13,7 +13,7 @@ router.get('/storage/:username', userController.storage);
 router.post('/register', [
         body('email', 'invalid email').isEmail(),
         body('password', 'password should be minimum of 6 characters').isLength({min: 6}),
-        body('username').notEmpty()
+        body('username','it should be 10 digit number').isLength(10).isNumeric()
     ], userController.register);
 router.post('/updateUsername', [
         body('newUsername').notEmpty(),
@@ -25,8 +25,12 @@ router.post('/updatePassword', [
     ], userController.updatePassword);
 router.post('/updateEmail', [
         body('newEmail', 'invalid email').isEmail(),
-        body('username').notEmpty()
+        body('username').notEmpty(),
     ], userController.updateEmail);
+router.post('/updateName', [
+    body('newName', 'invalid name').notEmpty(),
+    body('username').notEmpty(),
+], userController.updateName);
 router.post('/remove', [
         body('username').notEmpty()
     ], userController.remove);
