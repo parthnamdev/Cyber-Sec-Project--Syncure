@@ -266,6 +266,31 @@ const removePassword = (req, res) => {
     
 }
 
+const getMediaById = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    } else {
+        Article.findOne( {username: req.body.username}, function(err, foundUser) {
+            if(!err && foundUser) {
+                foundUser.media.forEach(element => {
+                    if(element._id == req.body.id){
+                        const str = element.path;
+                        const array = str.split('\\',3);
+                        const redirect = `${"/media" + "/" + array[2]}`;
+                        res.redirect(redirect);
+                    }
+                });
+            } else {
+                res.json({
+                    message: "no media/user found",
+                    error: err
+                });
+            }
+        });
+    }
+}
+
 module.exports = {
-    find, addMedia, addPassword, removeMedia, removePassword, findMedia, findPassword
+    find, addMedia, addPassword, removeMedia, removePassword, findMedia, findPassword, getMediaById
 }

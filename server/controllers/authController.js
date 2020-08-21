@@ -20,13 +20,13 @@ const login = (req, res, next) => {
             });
           } else {
             passport.authenticate("local")(req, res, function () {
-              const userRedirect = "verify/" + user.username;
-              res.redirect(userRedirect);
-              //     const token = jwt.sign({username: user.username}, process.env.JWT_SECRET, {expiresIn: '15m'} )
-              //     res.json({
-              //     meassge: "logged in successfully",
-              //     token: token
-              // });
+              // const userRedirect = "verify/" + user.username;
+              // res.redirect(userRedirect);
+                  const token = jwt.sign({username: user.username}, process.env.JWT_SECRET, {expiresIn: '15m'} )
+                  res.json({
+                  meassge: "logged in successfully",
+                  token: token
+              });
             });
           }
         });
