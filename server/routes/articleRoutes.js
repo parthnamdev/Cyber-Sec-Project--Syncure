@@ -4,36 +4,36 @@ const { body, validationResult } = require('express-validator');
 
 const articleController = require('../controllers/articleController');
 const upload = require("../middleware/upload");
-//const admin = require('../middleware/admin');
 const authenticate = require('../middleware/authenticate');
+const single = upload.single('media');
 
 //router.get('/', articleController.index);
 router.get('/find/:username', authenticate, articleController.find);
-router.post('/addMedia', upload.single('media'), [
-    body('username','it should be 10 digit number').isLength(10).isNumeric()
+router.post('/addMedia', [ authenticate, upload.single('media')], [
+    body('username','username should be minimum of 6 characters').isLength({min: 6})
     ], articleController.addMedia);
-router.post('/addPassword', [
-    body('username','it should be 10 digit number').isLength(10).isNumeric(),
+router.post('/addPassword', authenticate, [
+    body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('passwordCode').notEmpty()
     ], articleController.addPassword);
-router.post('/removeMedia', [
-    body('username','it should be 10 digit number').isLength(10).isNumeric(),
+router.post('/removeMedia', authenticate, [
+    body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('id').notEmpty()
     ], articleController.removeMedia);
-router.post('/removePassword', [
-    body('username','it should be 10 digit number').isLength(10).isNumeric(),
+router.post('/removePassword', authenticate, [
+    body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('id').notEmpty()
     ], articleController.removePassword);
-router.post('/findMedia', [
-    body('username','it should be 10 digit number').isLength(10).isNumeric(),
+router.post('/findMedia', authenticate, [
+    body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('id').notEmpty()
     ], articleController.findMedia);
-router.post('/findPassword', [
-    body('username','it should be 10 digit number').isLength(10).isNumeric(),
+router.post('/findPassword', authenticate, [
+    body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('id').notEmpty()
     ], articleController.findPassword);
-router.post('/getMediaById', [
-    body('username','it should be 10 digit number').isLength(10).isNumeric(),
+router.post('/getMediaById', authenticate, [
+    body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('id').notEmpty()
     ], articleController.getMediaById);
 
