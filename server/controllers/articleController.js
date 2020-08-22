@@ -1,20 +1,19 @@
 const Article = require('../models/articleModel');
 const fs = require('fs');
 const { body, validationResult } = require('express-validator');
-const getSize = require('get-folder-size');
 
 
-const index = (req, res, next) => {
-    Article.find(function(err, foundArticles) {
-        if(!err) {
-            res.json(foundArticles);
-        } else {
-            res.json({
-                error: err
-            });
-        }
-    });
-}
+// const index = (req, res, next) => {
+//     Article.find(function(err, foundArticles) {
+//         if(!err) {
+//             res.json(foundArticles);
+//         } else {
+//             res.json({
+//                 error: err
+//             });
+//         }
+//     });
+// }
 
 const find = (req, res) => {
     Article.findOne( {username: req.params.username}, function(err, foundArticle) {
@@ -34,7 +33,7 @@ const findPassword = (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     } else {
         Article.findOne( {username: req.body.username}, function(err, foundUser) {
-            if(!err) {
+            if(!err && foundUser) {
                 foundUser.passwords.forEach(element => {
                     if(element._id == req.body.id){
                         res.json(element);
@@ -42,7 +41,8 @@ const findPassword = (req, res) => {
                 });
             } else {
                 res.json({
-                    message: "no password found"
+                    message: "no password/user found",
+                    error: err
                 });
             }
         });
@@ -56,7 +56,7 @@ const findMedia = (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     } else {
         Article.findOne( {username: req.body.username}, function(err, foundUser) {
-            if(!err) {
+            if(!err && foundUser) {
                 foundUser.media.forEach(element => {
                     if(element._id == req.body.id){
                         res.json(element);
@@ -64,7 +64,8 @@ const findMedia = (req, res) => {
                 });
             } else {
                 res.json({
-                    message: "no media found"
+                    message: "no media/user found",
+                    error: err
                 });
             }
         });
@@ -77,52 +78,72 @@ const addMedia = (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     } else {
-        const myFolder = `${"./uploads/" + req.body.username}`;
-        getSize(myFolder, (err, size) => {
-        if (err) {throw err;}
-        const remaining = 100 * 1024 * 1024 - size;
         
         Article.findOne( {username: req.body.username}, function(err, foundArticle) {
-            if(!err) {
-                if(req.file && req.file.size <= remaining) {
-                    const newMedia = {
-                        path: req.file.path
+            if(!err && foundArticle) {
+                try {
+                    const memoryUsedByUser = (foundArticle.memoryUsed) * 1024 * 1024;
+                    const remaining = parseFloat(100*1024*1024) - parseFloat(memoryUsedByUser);
+                    
+                    if(req.file.size <= remaining) {
+                        const newMedia = {
+                            path: req.file.path,
+                            size: (parseFloat(req.file.size)/(1024*1024)).toFixed(2)
+                        }
+        
+                        let image_id;
+                        foundArticle.media.push(newMedia);
+                        foundArticle.media.forEach(element => {
+                            if(element.path == newMedia.path){
+                                image_id = element._id;
+                            }
+                        });
+                    
+                        const newMemory = parseFloat(req.file.size) + parseFloat(memoryUsedByUser);
+                        foundArticle.memoryUsed = (newMemory/(1024*1024)).toFixed(2);
+        
+                        foundArticle.save(function(err) {
+                            if(!err){
+                                res.json({
+                                    message: "media stored successfully",
+                                    id: image_id
+                                })
+                            } else {
+                                res.json({
+                                    error: err
+                                });
+                            }
+                        })
+                    } else {
+                        res.json({
+                            message: "storage size exceed or file too big"
+                        });
+                        const fileThatExceededLimit = req.file.path;
+
+                        fs.unlink(fileThatExceededLimit, (err) => {
+                          if (err) {
+                            console.error(err)
+                            return
+                          }
+                          //file removed
+                        })
                     }
-                    let image_id;
-                    foundArticle.media.push(newMedia);
-                    foundArticle.media.forEach(element => {
-                        if(element.path == newMedia.path){
-                            image_id = element._id;
-                        }
-                    });
-                    foundArticle.save(function(err) {
-                        if(!err){
-                            res.json({
-                                message: "media stored successfully",
-                                id: image_id
-                            })
-                        } else {
-                            res.json({
-                                error: err
-                            });
-                        }
-                    })
-                } else if(req.file.size > remaining) {
-                    res.json({
-                        message: "storage size exceed or file too big"
-                    });
-                } else {
-                    res.json({
-                        message: "no media uploaded or user doesn't exist "
-                    })
                 }
+                catch(err) {
+                    res.json({
+                        message:"invalid file or no file",
+                        note: "give username attribute before file if not done so",
+                        error: err
+                    });
+                  }
             } else {
                 res.json({
+                    message: "error or user not found",
                     error: err
                 });
             }
         });
-    });
+    // });
     }
     
     
@@ -140,7 +161,6 @@ const addPassword = (req, res) => {
                     code: req.body.passwordCode
                 }
                 let password_id;
-                console.log(foundArticle.passwords);
                 foundArticle.passwords.push(newPassword);
                 foundArticle.passwords.forEach(element => {
                     if(element.code == newPassword.code){
@@ -176,7 +196,7 @@ const removeMedia = (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     } else {
         Article.findOne( {username: req.body.username}, function(err, foundArticle) {
-            if(!err) {
+            if(!err && foundArticle) {
                 foundArticle.media.forEach(element => {
                     if(element._id == req.body.id){
                         const mediaToBeRemoved = element.path;
@@ -184,7 +204,9 @@ const removeMedia = (req, res) => {
                         fs.unlink(mediaToBeRemoved, (err) => {
                             if(err) throw err;
                         })
+                        const sizeFree = element.size;
                         foundArticle.media.pull(element);
+                        foundArticle.memoryUsed = parseFloat(foundArticle.memoryUsed) - parseFloat(sizeFree);
                         foundArticle.save(function(err) {
                             if(!err){
                                 res.json({
@@ -201,7 +223,7 @@ const removeMedia = (req, res) => {
                
             } else {
                 res.json({
-                    message: "no media found"
+                    message: "no media/user found"
                 });
             }
         });
@@ -235,7 +257,8 @@ const removePassword = (req, res) => {
                
             } else {
                 res.json({
-                    message: "no password found"
+                    message: "no password found",
+                    error: err
                 });
             }
         });
@@ -243,6 +266,31 @@ const removePassword = (req, res) => {
     
 }
 
+const getMediaById = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    } else {
+        Article.findOne( {username: req.body.username}, function(err, foundUser) {
+            if(!err && foundUser) {
+                foundUser.media.forEach(element => {
+                    if(element._id == req.body.id){
+                        const str = element.path;
+                        const array = str.split('\\',3);
+                        const redirect = `${"/media" + "/" + array[2]}`;
+                        res.redirect(redirect);
+                    }
+                });
+            } else {
+                res.json({
+                    message: "no media/user found",
+                    error: err
+                });
+            }
+        });
+    }
+}
+
 module.exports = {
-    index, find, addMedia, addPassword, removeMedia, removePassword, findMedia, findPassword
+    find, addMedia, addPassword, removeMedia, removePassword, findMedia, findPassword, getMediaById
 }

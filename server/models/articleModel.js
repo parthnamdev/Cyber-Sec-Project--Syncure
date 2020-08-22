@@ -5,11 +5,13 @@ const passwordSchema = new mongoose.Schema({
     code: String
 });
 const mediaSchema = new mongoose.Schema({
-    path: String
+    path: String,
+    size: String
 });
 
 const articleSchema = new mongoose.Schema({
     username: String,
+    memoryUsed: String,
     passwords: [passwordSchema],
     media: [mediaSchema]
 });
