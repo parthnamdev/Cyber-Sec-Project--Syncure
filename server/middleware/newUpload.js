@@ -2,9 +2,9 @@ const path = require("path");
 const multer = require("multer");
 const Article = require('../models/articleModel');
 
-var storage = multer.diskStorage({
+var storage = multer.memoryStorage({
     destination: function(req, file, cb) {
-        cb(null, `${"uploads/" + req.body.username}`);
+        cb(null, '');
     },
     filename: function(req, file, cb) {
         let ext = path.extname(file.originalname);
@@ -38,7 +38,7 @@ var upload = multer ({
         } );
     },
     limits: {
-        fileSize: 1024 * 1024 * 40
+        fileSize: 1024 * 1024 * 100
     }
 });
 

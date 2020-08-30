@@ -3,9 +3,9 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 
 const articleController = require('../controllers/articleController');
-const upload = require("../middleware/upload");
+var upload = require("../middleware/upload");
 const authenticate = require('../middleware/authenticate');
-const single = upload.single('media');
+const newUpload = require("../middleware/newUpload");
 
 //router.get('/', articleController.index);
 router.get('/find/:username', authenticate, articleController.find);
@@ -16,7 +16,7 @@ router.post('/addPassword', authenticate, [
     body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('passwordCode').notEmpty()
     ], articleController.addPassword);
-router.post('/removeMedia', authenticate, [
+router.post('/removeMedia', authenticate,[
     body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('id').notEmpty()
     ], articleController.removeMedia);

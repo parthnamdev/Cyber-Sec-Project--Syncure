@@ -1,7 +1,7 @@
 const Article = require('../models/articleModel');
 const fs = require('fs');
 const { body, validationResult } = require('express-validator');
-
+const axios = require('axios');
 
 // const index = (req, res, next) => {
 //     Article.find(function(err, foundArticles) {
@@ -86,8 +86,11 @@ const addMedia = (req, res) => {
                     const remaining = parseFloat(100*1024*1024) - parseFloat(memoryUsedByUser);
                     
                     if(req.file.size <= remaining) {
+                        const old_media_path = req.file.path.split(/\\(.+)/,2);
+                        const media_path = old_media_path[1].replace("\\","/");
+                        // console.log(media_path);
                         const newMedia = {
-                            path: req.file.path,
+                            path: media_path,
                             size: (parseFloat(req.file.size)/(1024*1024)).toFixed(2)
                         }
         
@@ -104,10 +107,25 @@ const addMedia = (req, res) => {
         
                         foundArticle.save(function(err) {
                             if(!err){
-                                res.json({
-                                    message: "media stored successfully",
-                                    id: image_id
+                                axios.get('https://cloud-api.yandex.net/v1/disk/resources/upload',{ params: { path: '/Syncure_data/'+media_path}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+                                .then(function (response) {
+                                    console.log(response);
+                                      axios.put(response.data.href, fs.createReadStream('./uploads/'+media_path)).then( resp => { 
+                                        fs.unlink(req.file.path, (err) => {
+                                            if (err) {
+                                              console.error(err)
+                                              return
+                                            }
+                                            //file removed
+                                          })
+                                        res.json({message: "media stored successfully"})}).catch(errr => {res.send("err")});
                                 })
+                                .catch(function (error) {
+                                      // handle error
+                                      res.json({
+                                          message: "err"
+                                      })
+                                    });
                             } else {
                                 res.json({
                                     error: err
@@ -201,22 +219,27 @@ const removeMedia = (req, res) => {
                     if(element._id == req.body.id){
                         const mediaToBeRemoved = element.path;
                         
-                        fs.unlink(mediaToBeRemoved, (err) => {
-                            if(err) throw err;
-                        })
-                        const sizeFree = element.size;
-                        foundArticle.media.pull(element);
-                        foundArticle.memoryUsed = parseFloat(foundArticle.memoryUsed) - parseFloat(sizeFree);
-                        foundArticle.save(function(err) {
-                            if(!err){
-                                res.json({
-                                    message: "media deleted successfully"
+                        axios.delete('https://cloud-api.yandex.net/v1/disk/resources', { params: { path: '/Syncure_data/'+mediaToBeRemoved}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+                        .then( response => {
+                                
+                                console.log("succesfully deleted media");
+                                const sizeFree = element.size;
+                                foundArticle.media.pull(element);
+                                foundArticle.memoryUsed = parseFloat(foundArticle.memoryUsed) - parseFloat(sizeFree);
+                                foundArticle.save(function(err) {
+                                    if(!err){
+                                        res.json({
+                                            message: "media deleted successfully"
+                                        });
+                                    } else {
+                                        res.json({
+                                            error: err
+                                        });
+                                    }
                                 });
-                            } else {
-                                res.json({
-                                    error: err
-                                });
-                            }
+                            })
+                        .catch(errr => {
+                            res.json(errr);
                         });
                     }
                 });
@@ -290,6 +313,11 @@ const getMediaById = (req, res) => {
         });
     }
 }
+
+// const testPublish = (req, res) => {
+//     // const data = null;
+//     axios.put('https://cloud-api.yandex.net/v1/disk/resources/publish', null, { params: { path: '/Downloads'}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}}).then( response => {console.log(response);res.json(response);}).catch(errr => {res.json(errr);});
+// }
 
 module.exports = {
     find, addMedia, addPassword, removeMedia, removePassword, findMedia, findPassword, getMediaById

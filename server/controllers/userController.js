@@ -2,6 +2,7 @@ const User = require('../models/userModel');
 const Article = require('../models/articleModel');
 const fs = require('fs');
 const { body, validationResult } = require('express-validator');
+const axios = require('axios');
 const passport = require('passport');
 const nodemailer = require("nodemailer");
 const { totp } = require('otplib');
@@ -86,7 +87,7 @@ const mail = async (req, res) => {
         
           const mailOptions = {
             from: {
-                    name: 'no-reply',
+                    name: 'Syncure app',
                     address: process.env.MAIL_USER
                   },
             to: toUser,
@@ -123,9 +124,49 @@ const twoFactorAuth = (req, res) => {
                     error: err
                 });
             } else{
-                passport.authenticate("local")(req, res, function(){
-                    console.log("succesfully added new user");
-                });
+                axios.put('https://cloud-api.yandex.net/v1/disk/resources', null,{ params: { path: '/Syncure_data/'+req.body.username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+                    .then( response => {
+                        // res.json({
+                        //     message:"created"
+                        // });
+                        passport.authenticate("local")(req, res, function(){
+                            console.log("succesfully added new user");
+                        });
+                        const newArticle = new Article({
+                            username: req.body.username,
+                            memoryUsed: "0.00"
+                        });
+                        const folder = `${"./uploads/" + req.body.username}`;
+                    
+                        fs.mkdir(folder, {recursive: true}, function(err) {
+                            if(err) throw err;
+                        });
+                        
+                        // newUser.save(function(err) {
+                        //     if(!err){
+                        //         console.log("succesfully added new user");
+                        //     } else {
+                        //         res.json({
+                        //             error: err
+                        //         });
+                        //     }
+                        // });
+                        newArticle.save(function(err) {
+                            if(!err){
+                                res.json({
+                                    message: "succesfully added new user"
+                                });
+                            } else {
+                                res.json({
+                                    error: err
+                                });
+                            }
+                        });
+                    })
+                    .catch(errr => {
+                        res.json(errr);
+                    });
+                
             }
         });
         // const newUser = new User({
@@ -133,36 +174,7 @@ const twoFactorAuth = (req, res) => {
         //     password: req.body.password,
         //     email: req.body.email
         // });
-        const newArticle = new Article({
-            username: req.body.username,
-            memoryUsed: "0.00"
-        });
-        const folder = `${"./uploads/" + req.body.username}`;
-    
-        fs.mkdir(folder, {recursive: true}, function(err) {
-            if(err) throw err;
-        });
-    
-        // newUser.save(function(err) {
-        //     if(!err){
-        //         console.log("succesfully added new user");
-        //     } else {
-        //         res.json({
-        //             error: err
-        //         });
-        //     }
-        // });
-        newArticle.save(function(err) {
-            if(!err){
-                res.json({
-                    message: "succesfully added new user"
-                });
-            } else {
-                res.json({
-                    error: err
-                });
-            }
-        });
+        
     } else {
         res.json({
             error: "2FA falied or incorrect username"
@@ -313,12 +325,18 @@ const remove = (req, res) => {
     } else {
         User.deleteOne( {username: req.body.username}, function(err) {
             if(!err) {
-                const folderToDelete = `${"./uploads/" + req.body.username}`;
-    
-                fs.rmdir(folderToDelete, {recursive: true}, function(err) {
-                    if(err) throw err;
+                axios.delete('https://cloud-api.yandex.net/v1/disk/resources', { params: { path: '/Syncure_data/'+req.body.username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+                .then( response => {
+                    const folderToDelete = `${"./uploads/" + req.body.username}`;
+                    fs.rmdir(folderToDelete, {recursive: true}, function(err) {
+                        if(err) throw err;
+                    });
+                    console.log("succesfully deleted user");
+                    })
+                .catch(errr => {
+                    res.json(errr);
                 });
-                console.log("succesfully deleted user");
+                
             } else {
                 res.json({
                     error: err,

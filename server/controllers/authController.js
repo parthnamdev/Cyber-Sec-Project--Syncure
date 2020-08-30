@@ -70,7 +70,7 @@ const mail = async (req, res) => {
 
   const mailOptions = {
     from: {
-            name: 'no-reply',
+            name: 'Syncure app',
             address: process.env.MAIL_USER
           },
     to: toUser,

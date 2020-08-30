@@ -12,6 +12,8 @@ const app = express();
 app.use(cors());
 app.use(helmet());
 const jwt = require("jsonwebtoken");
+const User =  require('./models/userModel');
+const fs = require('fs');
 
 const userRouter = require("./routes/userRoutes");
 const articleRouter = require("./routes/articleRoutes");
@@ -44,6 +46,15 @@ app.use("/api/user", userRouter);
 app.use("/api/article", articleRouter);
 app.use("/api", authRouter);
 app.use("/admin", adminRouter);
+
+User.find({},(err,found) => {
+    found.forEach(element => {
+        const create_folder = `${"./uploads/" + element.username}`;
+        fs.mkdir(create_folder, {recursive: true}, function(err) {
+            if(err) throw err;
+        });
+    });
+});
 
 app.get("/", (req, res) => {
     if(req.isAuthenticated()) {
