@@ -14,7 +14,14 @@ router.get('/getMedia/:username/:media', authenticate, [
 router.get('/downloadMedia/:username/:media', authenticate, [
     param('username','username should be minimum of 6 characters').isLength({min: 6})
     ],articleController.downloadMedia);
-router.post('/addMedia', [ authenticate, upload.single('media')], [
+router.get('/getMediaInfo', [
+    body('username','username should be minimum of 6 characters').isLength({min: 6})
+    ], articleController.getMediaInfo);
+router.get('/getMediaInfoById', [
+    body('username','username should be minimum of 6 characters').isLength({min: 6}),
+    body('id').notEmpty()
+    ], articleController.getMediaInfoById);
+router.post('/addMedia', upload.single('media'), [
     body('username','username should be minimum of 6 characters').isLength({min: 6})
     ], articleController.addMedia);
 router.post('/addPassword', authenticate, [
@@ -29,10 +36,10 @@ router.post('/removePassword', authenticate, [
     body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('id').notEmpty()
     ], articleController.removePassword);
-router.post('/findMedia', authenticate, [
+router.post('/findAllPasswords', authenticate, [
     body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('id').notEmpty()
-    ], articleController.findMedia);
+    ], articleController.findAllPasswords);
 router.post('/findPassword', authenticate, [
     body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('id').notEmpty()

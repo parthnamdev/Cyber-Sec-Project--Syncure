@@ -50,21 +50,19 @@ const findPassword = (req, res) => {
     
 }
 
-const findMedia = (req, res) => {
+const findAllPasswords = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     } else {
         Article.findOne( {username: req.body.username}, function(err, foundUser) {
             if(!err && foundUser) {
-                foundUser.media.forEach(element => {
-                    if(element._id == req.body.id){
-                        res.json(element);
-                    }
-                });
+                res.json({
+                    passwords: foundUser.passwords
+                })
             } else {
                 res.json({
-                    message: "no media/user found",
+                    message: "no user/password found",
                     error: err
                 });
             }
@@ -91,7 +89,8 @@ const addMedia = (req, res) => {
                         // console.log(media_path);
                         const newMedia = {
                             path: media_path,
-                            size: (parseFloat(req.file.size)/(1024*1024)).toFixed(2)
+                            size: (parseFloat(req.file.size)/(1024*1024)).toFixed(2),
+                            description: req.body.description
                         }
         
                         let image_id;
@@ -109,7 +108,7 @@ const addMedia = (req, res) => {
                             if(!err){
                                 axios.get('https://cloud-api.yandex.net/v1/disk/resources/upload',{ params: { path: '/Syncure_data/'+media_path}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
                                 .then(function (response) {
-                                    console.log(response);
+                                    
                                       axios.put(response.data.href, fs.createReadStream('./uploads/'+media_path)).then( resp => { 
                                         fs.unlink(req.file.path, (err) => {
                                             if (err) {
@@ -118,7 +117,7 @@ const addMedia = (req, res) => {
                                             }
                                             //file removed
                                           })
-                                        res.json({message: "media stored successfully"})}).catch(errr => {res.send("err")});
+                                        res.json({message: "media stored successfully", image_id: image_id})}).catch(errr => {res.send("err")});
                                 })
                                 .catch(function (error) {
                                       // handle error
@@ -381,11 +380,55 @@ const downloadMedia = (req, res) => {
     }
 }
 
+const getMediaInfo = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    } else {
+        Article.findOne( {username: req.body.username}, function(err, foundUser) {
+            if(!err && foundUser) {
+                res.json({
+                    media: foundUser.media
+                });
+            } else {
+                res.json({
+                    message: "no media/user found",
+                    error: err
+                });
+            }
+        });
+    }
+}
+
+const getMediaInfoById = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    } else {
+        Article.findOne( {username: req.body.username}, function(err, foundUser) {
+            if(!err && foundUser) {
+                foundUser.media.forEach(element => {
+                    if(element._id == req.body.id){
+                        res.json({
+                            media: element
+                        });
+                    }
+                });
+            } else {
+                res.json({
+                    message: "no media/user found",
+                    error: err
+                });
+            }
+        });
+    }
+}
+
 // const testPublish = (req, res) => {
 //     // const data = null;
 //     axios.put('https://cloud-api.yandex.net/v1/disk/resources/publish', null, { params: { path: '/Downloads'}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}}).then( response => {console.log(response);res.json(response);}).catch(errr => {res.json(errr);});
 // }
 
 module.exports = {
-    find, addMedia, addPassword, removeMedia, removePassword, findMedia, findPassword, getMediaById, getMedia, downloadMedia, downloadMediaById
+    find, addMedia, addPassword, removeMedia, removePassword, findAllPasswords, findPassword, getMediaById, getMedia, downloadMedia, downloadMediaById, getMediaInfo, getMediaInfoById
 }

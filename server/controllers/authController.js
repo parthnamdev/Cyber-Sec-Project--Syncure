@@ -6,7 +6,8 @@ const nodemailer = require("nodemailer");
 const { totp } = require('otplib');
 totp.options = { 
     digits: 8,
-    step: 120
+    step: 120,
+    epoch: Date.now()
    };
 const opts = totp.options;
 const secret = process.env.TOTP_SECRET;
@@ -45,6 +46,10 @@ const login = (req, res, next) => {
               });
             }
           });
+        } else {
+          res.json({
+            message: "no user found"
+          })
         }
       } else {
         res.json({
