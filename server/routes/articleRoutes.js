@@ -1,14 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const { body, validationResult } = require('express-validator');
+const { body, param, validationResult } = require('express-validator');
 
 const articleController = require('../controllers/articleController');
 var upload = require("../middleware/upload");
 const authenticate = require('../middleware/authenticate');
-const newUpload = require("../middleware/newUpload");
 
 //router.get('/', articleController.index);
 router.get('/find/:username', authenticate, articleController.find);
+router.get('/getMedia/:username/:media', authenticate, [
+    param('username','username should be minimum of 6 characters').isLength({min: 6})
+    ],articleController.getMedia);
+router.get('/downloadMedia/:username/:media', authenticate, [
+    param('username','username should be minimum of 6 characters').isLength({min: 6})
+    ],articleController.downloadMedia);
 router.post('/addMedia', [ authenticate, upload.single('media')], [
     body('username','username should be minimum of 6 characters').isLength({min: 6})
     ], articleController.addMedia);
@@ -36,5 +41,9 @@ router.post('/getMediaById', authenticate, [
     body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('id').notEmpty()
     ], articleController.getMediaById);
+router.post('/downloadMediaById', authenticate, [
+    body('username','username should be minimum of 6 characters').isLength({min: 6}),
+    body('id').notEmpty()
+    ], articleController.downloadMediaById);
 
 module.exports = router;

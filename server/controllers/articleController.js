@@ -298,10 +298,7 @@ const getMediaById = (req, res) => {
             if(!err && foundUser) {
                 foundUser.media.forEach(element => {
                     if(element._id == req.body.id){
-                        const str = element.path;
-                        const array = str.split('\\',3);
-                        const redirect = `${"/media" + "/" + array[2]}`;
-                        res.redirect(redirect);
+                        res.redirect('getMedia/'+element.path);
                     }
                 });
             } else {
@@ -314,11 +311,81 @@ const getMediaById = (req, res) => {
     }
 }
 
+ 
+const downloadMediaById = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    } else {
+        Article.findOne( {username: req.body.username}, function(err, foundUser) {
+            if(!err && foundUser) {
+                foundUser.media.forEach(element => {
+                    if(element._id == req.body.id){
+                        res.redirect('downloadMedia/'+element.path);
+                    }
+                });
+            } else {
+                res.json({
+                    message: "no media/user found",
+                    error: err
+                });
+            }
+        });
+    }
+}
+
+const getMedia = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    } else {
+        if(req.params.username) {
+            axios.put('https://cloud-api.yandex.net/v1/disk/resources/publish', null, { params: { path: '/Syncure_data/'+req.params.username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+            .then( response => {
+                // res.json(response);
+                axios.get('https://cloud-api.yandex.net/v1/disk/resources', { params: { path: '/Syncure_data/'+req.params.username, fields: 'name, public_url'}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+                .then( result => {
+                    //const url_array = result.data.public_url.split("?");
+                    res.redirect(result.data.public_url+'/'+req.params.media);
+                })
+                .catch(err => {
+                    res.send("error in getting media")
+                })
+            })
+            .catch(errr => {res.send("err in publish media");});
+        } else {
+            res.json({
+                message: "unauthorised user"
+            })
+        }
+    }
+}
+
+const downloadMedia = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    } else {
+        if(req.params.username) {
+            axios.get('https://cloud-api.yandex.net/v1/disk/resources/download', { params: { path: '/Syncure_data/'+req.params.username+'/'+req.params.media}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+            .then( response => {
+                // res.json(response);
+                res.redirect(response.data.href)
+            })
+            .catch(errr => {res.send("err in fetching media");});
+        } else {
+            res.json({
+                message: "unauthorised user"
+            })
+        }
+    }
+}
+
 // const testPublish = (req, res) => {
 //     // const data = null;
 //     axios.put('https://cloud-api.yandex.net/v1/disk/resources/publish', null, { params: { path: '/Downloads'}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}}).then( response => {console.log(response);res.json(response);}).catch(errr => {res.json(errr);});
 // }
 
 module.exports = {
-    find, addMedia, addPassword, removeMedia, removePassword, findMedia, findPassword, getMediaById
+    find, addMedia, addPassword, removeMedia, removePassword, findMedia, findPassword, getMediaById, getMedia, downloadMedia, downloadMediaById
 }

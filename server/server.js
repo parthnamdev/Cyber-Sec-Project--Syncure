@@ -20,8 +20,6 @@ const articleRouter = require("./routes/articleRoutes");
 const authRouter = require('./routes/authRoutes');
 const adminRouter = require('./routes/adminRoutes');
 
-var access = false;
-
 app.use(bodyParser.urlencoded({extended:true}));
 
 // app.use( mediaAccess, express.static(__dirname + "/uploads"));
@@ -70,56 +68,6 @@ app.get("/", (req, res) => {
     
 });
 
-app.get("/media/:media", (req, res) => {
-    try {
-        const media = req.params.media;
-        console.log("worked");
-        if(req.isAuthenticated()){
-            const token = req.headers.authorization.split(' ')[1]
-            const decode = jwt.verify(token, process.env.JWT_SECRET)
-            if(decode.username == req.user.username) {
-                access = true;
-                const redirect = `${"/" + decode.username + "/" + media}`;
-                res.redirect(redirect);
-            } else {
-                res.json({
-                    message: "unauthorised access"
-                });
-            }           
-        } else {
-            res.json({
-                message: "unauthorised"
-            });
-        }
-
-    } catch(err) {
-        res.json({
-            message: "authentication failed",
-            error: err
-        });
-    }
-})
-
-const mediaAccess = (req, res, next) => {
-    try {
-        if(access === true){
-            next()
-            access = false;
-        } else {
-            res.json({
-                message: "unauthorised access or route doesn't exist"
-            });
-        }
-        
-    } catch(err) {
-        res.json({
-            message: "authentication failed",
-            error: err
-        });
-    }
-}
-
-app.use( mediaAccess, express.static(__dirname + "/uploads"));
 app.listen(5000 || process.env.PORT, function() {
     console.log("Server connected at port 5000...");
 });

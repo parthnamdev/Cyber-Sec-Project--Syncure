@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const axios = require('axios');
 const passport = require("passport");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
@@ -115,10 +116,19 @@ const twoStepVerification = (req, res) => {
 };
 
 const logout = (req, res) => {
-  req.logout();
-  res.json({
-    message: "successfully logged out",
-  });
+  if(req.isAuthenticated()) {
+  axios.put('https://cloud-api.yandex.net/v1/disk/resources/unpublish', null, { params: { path: '/Syncure_data/'+req.user.username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+  .then( response => {
+    // res.json(response);
+    req.logout();
+    res.json({
+      message: "successfully logged out",
+    });
+  })
+  .catch(errr => {res.send("err in logging out");});
+  } else {
+    res.send("already logged out");
+  }
 };
 
 module.exports = {
