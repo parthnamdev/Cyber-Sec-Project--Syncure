@@ -14,14 +14,14 @@ router.get('/getMedia/:username/:media', authenticate, [
 router.get('/downloadMedia/:username/:media', authenticate, [
     param('username','username should be minimum of 6 characters').isLength({min: 6})
     ],articleController.downloadMedia);
-router.get('/getMediaInfo', [
+router.get('/getMediaInfo', authenticate, [
     body('username','username should be minimum of 6 characters').isLength({min: 6})
     ], articleController.getMediaInfo);
-router.get('/getMediaInfoById', [
+router.get('/getMediaInfoById', authenticate, [
     body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('id').notEmpty()
     ], articleController.getMediaInfoById);
-router.post('/addMedia', upload.single('media'), [
+router.post('/addMedia', [ authenticate, upload.single('media')], [
     body('username','username should be minimum of 6 characters').isLength({min: 6})
     ], articleController.addMedia);
 router.post('/addPassword', authenticate, [

@@ -20,7 +20,7 @@ router.post('/register', [
         body('email', 'invalid email').isEmail(),
         body('username','username should be minimum of 6 characters').isLength({min: 6})
     ], userController.register);
-router.post('/updateUsername', [
+router.post('/updateUsername', authenticate, [
         body('newUsername','it should be 10 digit number').isLength(10).isNumeric(),
         body('username','username should be minimum of 6 characters').isLength({min: 6})
     ], userController.updateUsername);
