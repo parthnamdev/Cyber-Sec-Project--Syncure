@@ -134,11 +134,11 @@ const addMedia = (req, res) => {
                             description: req.body.description
                         }
         
-                        let image_id;
+                        let media_element;
                         foundArticle.media.push(newMedia);
                         foundArticle.media.forEach(element => {
                             if(element.path == newMedia.path){
-                                image_id = element._id;
+                                media_element = element;
                             }
                         });
                     
@@ -164,7 +164,7 @@ const addMedia = (req, res) => {
                                             message: "media stored successfully. Store media_id to access the media directly",
                                             errors: [],
                                             data : {
-                                                media_id: image_id
+                                                media: media_element
                                             }
                                             
                                         })})
