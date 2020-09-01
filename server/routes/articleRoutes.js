@@ -21,7 +21,7 @@ router.get('/getMediaInfoById', authenticate, [
     body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('id').notEmpty()
     ], articleController.getMediaInfoById);
-router.post('/addMedia', upload, [
+router.post('/addMedia', [ authenticate, upload], [
     body('username','username should be minimum of 6 characters').isLength({min: 6})
     ], articleController.addMedia);
 router.post('/addPassword', authenticate, [
