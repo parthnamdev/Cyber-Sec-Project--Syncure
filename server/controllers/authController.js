@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const axios = require('axios');
 const passport = require("passport");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
@@ -28,7 +29,10 @@ const login = (req, res, next) => {
             if (err) {
               console.log(err);
               res.json({
+                status: "failure",
                 message: "failed login or incorrect password",
+                errors: err,
+                data: {}
               });
             } else {
               passport.authenticate("local")(req, res, function () {
@@ -44,10 +48,20 @@ const login = (req, res, next) => {
               });
             }
           });
+        } else {
+          res.json({
+            status: "failure",
+            message: "no user found",
+            errors: [],
+            data: {}
+          })
         }
       } else {
         res.json({
-          error: err,
+          status: "failure",
+          message: "",
+          errors: err,
+          data: {}
         });
       }
     });
@@ -70,7 +84,7 @@ const mail = async (req, res) => {
 
   const mailOptions = {
     from: {
-            name: 'no-reply',
+            name: 'Syncure app',
             address: process.env.MAIL_USER
           },
     to: toUser,
@@ -79,16 +93,23 @@ const mail = async (req, res) => {
   };
 
   const info = await transporter.sendMail(mailOptions).catch((err) => {
-    console.log(err);
     res.json({
-      error: err,
+      status: "failure",
+      message: "",
+      errors: err,
+      data: {}
     });
   });
   console.log(`Mail sent to : ${info.messageId}`);
   return res.json({
+    status: "success",
     message: "Mail Sent",
-    response: info.response,
-    timeRemaining: totp.timeRemaining()
+    errors: [],
+    data: {
+      response: info.response,
+      timeRemaining: totp.timeRemaining()
+    }
+    
   });
 };
 
@@ -104,21 +125,46 @@ const twoStepVerification = (req, res) => {
       { expiresIn: "15m" }
     );
     res.json({
+      status: "success",
       meassge: "logged in successfully",
-      token: token,
+      errors: [],
+      data: {
+        token: token
+      }
+      
     });
   } else {
     res.json({
+      status: "failure",
       message: "unauthorised or 2FA failed",
+      errors: [],
+      data: {}
     });
   }
 };
 
 const logout = (req, res) => {
-  req.logout();
-  res.json({
-    message: "successfully logged out",
-  });
+  if(req.isAuthenticated()) {
+  axios.put('https://cloud-api.yandex.net/v1/disk/resources/unpublish', null, { params: { path: '/Syncure_data/'+req.user.username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+  .then( response => {
+    // res.json(response);
+    req.logout();
+    res.json({
+      status: "success",
+      message: "successfully logged out",
+      errors: [],
+      data: {}
+    });
+  })
+  .catch(errr => {res.send("err in logging out");});
+  } else {
+    res.json({
+      status: "failure",
+      message: "already logged out",
+      errors: [],
+      data: {}
+    });
+  }
 };
 
 module.exports = {

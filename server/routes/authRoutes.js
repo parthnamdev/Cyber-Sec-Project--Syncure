@@ -10,5 +10,3 @@ router.post('/logout', authController.logout);
 router.get('/mail', isLogged, authController.mail);
 
 module.exports = router;
-
-//direct get verify route ??

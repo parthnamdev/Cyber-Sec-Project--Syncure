@@ -12,13 +12,13 @@ const app = express();
 app.use(cors());
 app.use(helmet());
 const jwt = require("jsonwebtoken");
+const User =  require('./models/userModel');
+const fs = require('fs');
 
 const userRouter = require("./routes/userRoutes");
 const articleRouter = require("./routes/articleRoutes");
 const authRouter = require('./routes/authRoutes');
 const adminRouter = require('./routes/adminRoutes');
-
-var access = false;
 
 app.use(bodyParser.urlencoded({extended:true}));
 
@@ -45,6 +45,15 @@ app.use("/api/article", articleRouter);
 app.use("/api", authRouter);
 app.use("/admin", adminRouter);
 
+User.find({},(err,found) => {
+    found.forEach(element => {
+        const create_folder = `${"./uploads/" + element.username}`;
+        fs.mkdir(create_folder, {recursive: true}, function(err) {
+            if(err) throw err;
+        });
+    });
+});
+
 app.get("/", (req, res) => {
     if(req.isAuthenticated()) {
         res.json({
@@ -59,56 +68,6 @@ app.get("/", (req, res) => {
     
 });
 
-app.get("/media/:media", (req, res) => {
-    try {
-        const media = req.params.media;
-        console.log("worked");
-        if(req.isAuthenticated()){
-            const token = req.headers.authorization.split(' ')[1]
-            const decode = jwt.verify(token, process.env.JWT_SECRET)
-            if(decode.username == req.user.username) {
-                access = true;
-                const redirect = `${"/" + decode.username + "/" + media}`;
-                res.redirect(redirect);
-            } else {
-                res.json({
-                    message: "unauthorised access"
-                });
-            }           
-        } else {
-            res.json({
-                message: "unauthorised"
-            });
-        }
-
-    } catch(err) {
-        res.json({
-            message: "authentication failed",
-            error: err
-        });
-    }
-})
-
-const mediaAccess = (req, res, next) => {
-    try {
-        if(access === true){
-            next()
-            access = false;
-        } else {
-            res.json({
-                message: "unauthorised access or route doesn't exist"
-            });
-        }
-        
-    } catch(err) {
-        res.json({
-            message: "authentication failed",
-            error: err
-        });
-    }
-}
-
-app.use( mediaAccess, express.static(__dirname + "/uploads"));
 app.listen(5000 || process.env.PORT, function() {
     console.log("Server connected at port 5000...");
 });

@@ -6,7 +6,8 @@ const passwordSchema = new mongoose.Schema({
 });
 const mediaSchema = new mongoose.Schema({
     path: String,
-    size: String
+    size: String,
+    description: String
 });
 
 const articleSchema = new mongoose.Schema({

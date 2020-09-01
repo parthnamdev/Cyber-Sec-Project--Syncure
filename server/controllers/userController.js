@@ -2,6 +2,7 @@ const User = require('../models/userModel');
 const Article = require('../models/articleModel');
 const fs = require('fs');
 const { body, validationResult } = require('express-validator');
+const axios = require('axios');
 const passport = require('passport');
 const nodemailer = require("nodemailer");
 const { totp } = require('otplib');
@@ -11,8 +12,10 @@ totp.options = {
    };
 const opts = totp.options;
 const secret = process.env.TOTP_SECRET;
-var newUserRegister;
+var newUserRegister = {};
+var NewEmail = {};
 var accesser = false;
+var mailUpdateAccesser = false;
 // const toptToken = totp.generate(secret);
 
 
@@ -31,10 +34,18 @@ var accesser = false;
 const find = (req, res) => {
     User.findOne( {username: req.params.username}, function(err, foundUser) {
         if(!err) {
-            res.json(foundUser);
+            res.json({
+                status: "success",
+                message: "found users are sent in data attribute",
+                errors: [],
+                data: foundUser
+            });
         } else {
             res.json({
-                message: "no user found"
+                status: "failure",
+                message: "no user found",
+                errors: [],
+                data: {}
             });
         }
     });
@@ -44,17 +55,28 @@ const register = (req, res) => {
     User.findOne( {username: req.body.username}, function(err, foundUser) {
         if(err) {
             res.json({
-                error: err
+                status: "failure",
+                message: "error",
+                error: [],
+                data: {}
             });
         } else {
             if(foundUser) {
                 res.json({
-                    message: "username already exist !"
+                    status: "failure",
+                    message: "username already exist !",
+                    error: [],
+                    data: {}
                 });
             } else {
                 const errors = validationResult(req);
                 if (!errors.isEmpty()) {
-                  return res.status(400).json({ errors: errors.array() });
+                  return res.status(400).json({
+                      status: "failure",
+                      message: "validation error",
+                      errors: errors.array(),
+                      data: {}
+                    });
                 } else {
                     newUserRegister = {username: req.body.username, email: req.body.email , name: req.body.name};
                     accesser = true;
@@ -86,7 +108,7 @@ const mail = async (req, res) => {
         
           const mailOptions = {
             from: {
-                    name: 'no-reply',
+                    name: 'Syncure app',
                     address: process.env.MAIL_USER
                   },
             to: toUser,
@@ -95,9 +117,321 @@ const mail = async (req, res) => {
           };
         
           const info = await transporter.sendMail(mailOptions).catch((err) => {
-            console.log(err);
+            // console.log(err);
             res.json({
-              error: err,
+                status: "failure",
+                message: "error sending mail",
+                errors: [err],
+                data: {}
+            });
+          });
+          console.log(`Mail sent to : ${info.messageId}`);
+          return res.json({
+              status: "success",
+              message: "Mail Sent",
+              errors: [],
+              data: {
+                response: info.response,
+                timeRemaining: totp.timeRemaining()
+              }
+              
+          });
+    } else {
+        res.json({
+            status: "failure",
+            message: "unauthorised, you don't have direct access to this route",
+            errors: [],
+            data: {}
+        })
+    }
+    
+  };
+
+const twoFactorAuth = (req, res) => {
+    const isValid = totp.check(req.body.totp, secret);
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            status: "failure",
+            message: "validation error",
+            errors: errors.array(),
+            data: {}
+          });
+    } else {
+    if(isValid === true && req.params.username === newUserRegister.username) {
+        User.findOne( {username: req.params.username}, function(err, foundUser) {
+            if(err) {
+                res.json({
+                    status: "failure",
+                    message: "",
+                    errors: [err],
+                    data: {}
+                });
+            } else {
+                if(foundUser) {
+                    res.json({
+                        status: "failure",
+                        message: "username already exist !",
+                        errors: [],
+                        data: {}
+                    });
+                } else {
+                    User.register(newUserRegister, req.body.password, function(err, user){
+                        if(err){
+                            res.json({
+                                status: "failure",
+                                message: "",
+                                errors: [err],
+                                data: {}
+                            });
+                        } else{
+                            axios.put('https://cloud-api.yandex.net/v1/disk/resources', null,{ params: { path: '/Syncure_data/'+req.body.username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+                                .then( response => {
+                                    // res.json({
+                                    //     message:"created"
+                                    // });
+                                    passport.authenticate("local")(req, res, function(){
+                                        console.log("succesfully added new user");
+                                    });
+                                    const newArticle = new Article({
+                                        username: req.body.username,
+                                        memoryUsed: "0.00"
+                                    });
+                                    const folder = `${"./uploads/" + req.body.username}`;
+                                
+                                    fs.mkdir(folder, {recursive: true}, function(err) {
+                                        if(err) throw err;
+                                    });
+                                    newUserRegister = {}
+                                    // newUser.save(function(err) {
+                                    //     if(!err){
+                                    //         console.log("succesfully added new user");
+                                    //     } else {
+                                    //         res.json({
+                                    //             error: err
+                                    //         });
+                                    //     }
+                                    // });
+                                    newArticle.save(function(err) {
+                                        if(!err){
+                                            res.json({
+                                                status: "success",
+                                                message: "succesfully added new user",
+                                                errors: [],
+                                                data: {}
+                                            });
+                                        } else {
+                                            res.json({
+                                                status: "failure",
+                                                message: "",
+                                                errors: [err],
+                                                data: {}
+                                            });
+                                        }
+                                    });
+                                })
+                                .catch(errr => {
+                                    res.json({
+                                        status: "failure",
+                                        message: "disk api err",
+                                        errors: [errr],
+                                        data: {}
+                                    });
+                                });
+                            
+                        }
+                    });
+                }
+            }
+        });
+        
+        // const newUser = new User({
+        //     username: req.body.username,
+        //     password: req.body.password,
+        //     email: req.body.email
+        // });
+        
+    } else {
+        res.json({
+            status: "failure",
+            message: "2FA falied or incorrect username",
+            errors: [],
+            data: {}
+        });
+    }
+}
+}
+
+const updateUsername = (req, res) => {
+    User.findOne( {username: req.body.newUsername}, function(err, foundUser) {
+        if(err) {
+            res.json({
+                status: "failure",
+                message: "",
+                errors: [err],
+                data: {}
+            });
+        } else {
+            if(foundUser) {
+                res.json({
+                    status: "failure",
+                    message: "username already exist !",
+                    errors: [],
+                    data: {}
+                });
+            } else {
+                const errors = validationResult(req);
+                if (!errors.isEmpty()) {
+                  return res.status(400).json({
+                    status: "failure",
+                    message: "validation error",
+                    errors: errors.array(),
+                    data: {}
+                });
+                } else {
+                    const curr_username = req.body.username;
+                    const new_username = req.body.newUsername;
+                    User.updateOne({username: req.body.username},  
+                        {username: req.body.newUsername}, function (err, docs) { 
+                        if (err){ 
+                            res.json({
+                                status: "failure",
+                                message: "err in updating username",
+                                errors: [err],
+                                data: {}
+                            })
+                        } 
+                        else{
+                            axios.post('https://cloud-api.yandex.net/v1/disk/resources/move', null,{ params: { from: '/Syncure_data/'+curr_username, path: '/Syncure_data/'+new_username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+                            .then( response => {
+                                console.log("succeccfully renamed cloud directory");
+                                
+                                  Article.findOne( {username: curr_username}, function(err, foundUser) {
+                                    if(!err && foundUser) {
+                                        foundUser.media.forEach(element => {
+                                            const mediaName = element.path.split('/',2)
+                                            const mName = mediaName[1];
+                                            element.path = new_username+'/'+mName;
+                                            foundUser.save(errr => {
+                                                if(!errr) {
+                                                    console.log("changed paths successfully");
+                                                } else {
+                                                    res.json({
+                                                        status: "failure",
+                                                        message: "err in changing paths in schema/database",
+                                                        errors: [errr]
+                                                    })
+                                                }
+                                            });
+                                        });
+                                        Article.updateOne({username: curr_username},  
+                                            {username: new_username}, function (err, docs) { 
+                                            if (err){ 
+                                                res.json({
+                                                    status: "failure",
+                                                    message: "err in updating username in articles and local folder",
+                                                    errors: [err],
+                                                    data: {}
+                                                })
+                                            } 
+                                            else{
+                                                const currPath = `${"./uploads/" + curr_username}`;
+                                                const newPath = `${"./uploads/" + new_username}`;
+                                                fs.rename(currPath, newPath, function(err) {
+                                                    if (err) {
+                                                      console.log(err)
+                                                    } else {
+                                                      console.log("Successfully renamed local directory.")
+                                                    }
+                                                  })
+                                                res.json({
+                                                    status: "success",
+                                                    message: "Updated username successfully",
+                                                    errors: [],
+                                                    data: {
+                                                        docs: docs
+                                                    }
+                                                });
+                                            } 
+                                        });
+                                    } else {
+                                        res.json({
+                                            status: "failure",
+                                            message: "err changing local directory name",
+                                            errors: [err],
+                                            data: {}
+                                        });
+                                    }
+                                });
+                                 
+                            })
+                            .catch(errr => {
+                                res.json({
+                                    status: "failure",
+                                    message: "disk api err",
+                                    errors: [errr],
+                                    data: {}
+                                });
+                            });
+                        } 
+                    });
+                }
+            }
+        }
+    });
+}
+
+const updateEmail = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
+    } else {
+        NewEmail = {
+            mail: req.body.newEmail,
+            username: req.body.username
+        }
+        mailUpdateAccesser = true;
+        res.redirect("mailForEmailUpdate");
+    }
+}
+
+const mailForEmailUpdate = async (req, res) => {
+    if(mailUpdateAccesser === true){
+        mailUpdateAccesser = false;
+        const transporter = nodemailer.createTransport({
+            service: "SendGrid",
+            auth: {
+              user: process.env.MAIL_USERNAME,
+              pass: process.env.MAIL_PASS,
+            },
+          });
+        
+          const toptToken = totp.generate(secret);
+          const textMsg = `${"Your One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for 2 mins only"}`;
+          const toUserForEmail = NewEmail.mail;
+        
+          const mailOptions = {
+            from: {
+                    name: 'Syncure app',
+                    address: process.env.MAIL_USER
+                  },
+            to: toUserForEmail,
+            subject: "OTP - Authentication - Syncure app",
+            text: textMsg,
+          };
+        
+          const info = await transporter.sendMail(mailOptions).catch((err) => {
+            // console.log(err);
+            res.json({
+                status: "failure",
+                message: "error sending mail",
+                errors: [err],
+                data: {}
             });
           });
           console.log(`Mail sent to : ${info.messageId}`);
@@ -114,154 +448,25 @@ const mail = async (req, res) => {
     
   };
 
-const twoFactorAuth = (req, res) => {
+const emailtwoFactorAuth = (req, res) => {
     const isValid = totp.check(req.body.totp, secret);
-    if(isValid === true && req.params.username === newUserRegister.username) {
-        User.register(newUserRegister, req.body.password, function(err, user){
-            if(err){
-                res.json({
-                    error: err
-                });
-            } else{
-                passport.authenticate("local")(req, res, function(){
-                    console.log("succesfully added new user");
-                });
-            }
-        });
-        // const newUser = new User({
-        //     username: req.body.username,
-        //     password: req.body.password,
-        //     email: req.body.email
-        // });
-        const newArticle = new Article({
-            username: req.body.username,
-            memoryUsed: "0.00"
-        });
-        const folder = `${"./uploads/" + req.body.username}`;
-    
-        fs.mkdir(folder, {recursive: true}, function(err) {
-            if(err) throw err;
-        });
-    
-        // newUser.save(function(err) {
-        //     if(!err){
-        //         console.log("succesfully added new user");
-        //     } else {
-        //         res.json({
-        //             error: err
-        //         });
-        //     }
-        // });
-        newArticle.save(function(err) {
-            if(!err){
-                res.json({
-                    message: "succesfully added new user"
-                });
-            } else {
-                res.json({
-                    error: err
-                });
-            }
-        });
-    } else {
-        res.json({
-            error: "2FA falied or incorrect username"
-        });
-    }
-}
-
-const updateUsername = (req, res) => {
-    User.findOne( {username: req.body.newUsername}, function(err, foundUser) {
-        if(err) {
-            res.json({
-                error: err
-            });
-        } else {
-            if(foundUser) {
-                res.json({
-                    message: "username already exist !"
-                });
-            } else {
-                const errors = validationResult(req);
-                if (!errors.isEmpty()) {
-                  return res.status(400).json({ errors: errors.array() });
-                } else {
-                    User.updateOne({username: req.body.username},  
-                        {username: req.body.newUsername}, function (err, docs) { 
-                        if (err){ 
-                            console.log(err) 
-                        } 
-                        else{
-                            const currPath = `${"./uploads/" + req.body.username}`;
-                            const newPath = `${"./uploads/" + req.body.newUsername}`;
-                            fs.rename(currPath, newPath, function(err) {
-                                if (err) {
-                                  console.log(err)
-                                } else {
-                                  console.log("Successfully renamed the directory.")
-                                }
-                              }) 
-                            console.log("Updated username successfully");
-                        } 
-                    });
-                    Article.updateOne({username: req.body.username},  
-                        {username: req.body.newUsername}, function (err, docs) { 
-                        if (err){ 
-                            console.log(err) 
-                        } 
-                        else{
-                            res.json({
-                                message: "Updated username successfully",
-                                docs: docs
-                            });
-                        } 
-                    });
-                }
-                
-            }
-        }
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
     });
-}
-
-const updatePassword = (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
     } else {
-        User.updateOne({username: req.body.username},  
-            {password: req.body.newPassword}, function (err, docs) { 
+    if(isValid === true && req.params.username === NewEmail.username) {
+        User.updateOne({username: NewEmail.username},  
+            {email: NewEmail.mail}, function (err, docs) { 
             if (err){ 
                 console.log(err) 
             } 
             else{ 
-                if(docs.n !== 0){
-                    res.json({
-                        message: "Updated password successfully",
-                        docs: docs
-                    });
-                } else {
-                    res.json({
-                        message: "user not found or update fail",
-                        docs: docs
-                    });
-                }  
-            } 
-        }); 
-    }
-    
-}
-
-const updateEmail = (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    } else {
-        User.updateOne({username: req.body.username},  
-            {email: req.body.newEmail}, function (err, docs) { 
-            if (err){ 
-                console.log(err) 
-            } 
-            else{ 
+                NewEmail = {}
                 if(docs.n !== 0){
                     res.json({
                         message: "Updated email successfully",
@@ -275,29 +480,85 @@ const updateEmail = (req, res) => {
                 } 
             } 
         });
+    } else {
+        res.json({
+            error: "2FA falied or incorrect username"
+        });
     }
+}
+}
+
+const updatePassword = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
+    } else {
+        User.findOne({username: req.body.username}, function (err, found) { 
+            if (!err){ 
+                found.changePassword(req.body.password, req.body.newPassword, (err) => {
+                    if(!err) {
+                        res.json({
+                            message: "Updated password successfully"
+                        });
+                    } else {
+                        res.json({
+                            error: err
+                        })
+                    }
+                }); 
+             } else{ 
+                res.json({
+                    error: err
+                })
+            } 
+        }); 
+    }
+    
 }
 
 const updateName = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
     } else {
         User.updateOne({username: req.body.username},  
             {name: req.body.newName}, function (err, docs) { 
             if (err){ 
-                console.log(err) 
+                res.json({
+                    status: "failure",
+                    message: "err in updating name",
+                    errors: [err],
+                    data: {}
+                })
             } 
             else{
                 if(docs.n !== 0){
                     res.json({
+                        status: "success",
                         message: "Updated name successfully",
-                        docs: docs
+                        errors: [],
+                        data: {
+                            docs: docs 
+                        }
                     });
                 } else {
                     res.json({
+                        status: "failure",
                         message: "user not found or update fail",
-                        docs: docs
+                        errors: [],
+                        data: {
+                            docs: docs
+                        }
                     });
                 } 
                  
@@ -309,56 +570,85 @@ const updateName = (req, res) => {
 const remove = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
     } else {
         User.deleteOne( {username: req.body.username}, function(err) {
             if(!err) {
-                const folderToDelete = `${"./uploads/" + req.body.username}`;
-    
-                fs.rmdir(folderToDelete, {recursive: true}, function(err) {
-                    if(err) throw err;
+                axios.delete('https://cloud-api.yandex.net/v1/disk/resources', { params: { path: '/Syncure_data/'+req.body.username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+                .then( response => {
+                    const folderToDelete = `${"./uploads/" + req.body.username}`;
+                    fs.rmdir(folderToDelete, {recursive: true}, function(err) {
+                        if(err) throw err;
+                    });
+                    console.log("succesfully deleted user");
+                    })
+                .catch(errr => {
+                    res.json({
+                        status: "failure",
+                        message: "disk api err",
+                        errors: [errr],
+                        data: {}
+                    });
                 });
-                console.log("succesfully deleted user");
+                
+                Article.deleteOne( {username: req.body.username}, function(err) {
+                    if(!err) {
+                        res.json({
+                            status: "success",
+                            message: "successfully deleted user and all media",
+                            errors: [err],
+                            data: {}
+                        });
+                    } else {
+                        res.json({
+                            status: "failure",
+                            message: "err deleting media from database",
+                            errors: [err],
+                            data: {}
+                        });
+                    }
+                }); 
             } else {
                 res.json({
-                    error: err,
-                    message: "user not found"
+                    status: "failure",
+                    message: "user not found",
+                    errors: [err],
+                    data: {}
                 });
             }
         });
-        
-        Article.deleteOne( {username: req.body.username}, function(err) {
-            if(!err) {
-                res.json({
-                    message: "successfully deleted user and all articles"
-                });
-            } else {
-                res.json({
-                    error: err
-                });
-            }
-        }); 
     }
-    
 }
 
 const storage = (req, res) => {
       Article.findOne( {username: req.params.username}, function(err, foundArticle) {
         if(!err && foundArticle) {
             res.json({
-                memoryUsed: foundArticle.memoryUsed,
-                remaining: (100 - parseFloat(foundArticle.memoryUsed)).toString(),
-                unit: "megaBytes"
+                status: "sucesss",
+                message: "storage info",
+                errors: [],
+                data: {
+                    memoryUsed: foundArticle.memoryUsed,
+                    remaining: (100 - parseFloat(foundArticle.memoryUsed)).toString(),
+                    unit: "megaBytes"
+                }
             });
         } else {
             res.json({
+                status: "failure",
                 message: "no user or article found",
-                error: err
+                errors: [err],
+                data: {}
             });
         }
     });
 }
 
 module.exports = {
-    find, register, updateUsername, updatePassword, remove, storage, updateEmail, updateName, mail, twoFactorAuth
+    find, register, updateUsername, updatePassword, remove, storage, updateEmail, updateName, mail, twoFactorAuth, mailForEmailUpdate, emailtwoFactorAuth
 }

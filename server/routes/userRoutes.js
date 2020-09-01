@@ -8,10 +8,14 @@ const authenticate = require('../middleware/authenticate');
 router.get('/find/:username', authenticate, userController.find);
 router.get('/storage/:username', authenticate, userController.storage);
 router.get('/mail', userController.mail);
+router.get('/mailForEmailUpdate', userController.mailForEmailUpdate);
 router.post('/verify/:username', [
     body('password', 'password should be minimum of 6 characters').isLength({min: 6}),
     body('totp','length of OTP should be 8').isLength(8)
     ], userController.twoFactorAuth);
+router.post('/verifyMail/:username', [
+    body('totp','length of OTP should be 8').isLength(8)
+], userController.emailtwoFactorAuth);
 router.post('/register', [
         body('email', 'invalid email').isEmail(),
         body('username','username should be minimum of 6 characters').isLength({min: 6})
@@ -22,6 +26,7 @@ router.post('/updateUsername', authenticate, [
     ], userController.updateUsername);
 router.post('/updatePassword', authenticate, [
         body('newPassword', 'password should be minimum of 6 characters').isLength({min: 6}),
+        body('password', 'password should be minimum of 6 characters').isLength({min: 6}),
         body('username','username should be minimum of 6 characters').isLength({min: 6})
     ], userController.updatePassword);
 router.post('/updateEmail', authenticate, [
