@@ -19,15 +19,20 @@ const requestAccess = (req, res) => {
             res.redirect("mail");
         } else {
             res.json({
-                message: "unauthorised"
+                status: "failure",
+                message: "unauthorised",
+                errors: [],
+                data: {}
             })
         }
         
 
     } catch(err) {
         res.json({
+            status: "failure",
             message: "authentication failed",
-            error: err
+            errors: [err],
+            data: {}
         });
     }
 }
@@ -49,7 +54,7 @@ const mail = async (req, res) => {
         
           const mailOptions = {
             from: {
-                    name: 'no-reply',
+                    name: 'Syncure app',
                     address: process.env.MAIL_USER
                   },
             to: toUser,
@@ -58,20 +63,30 @@ const mail = async (req, res) => {
           };
         
           const info = await transporter.sendMail(mailOptions).catch((err) => {
-            console.log(err);
+            // console.log(err);
             res.json({
-              error: err,
+                status: "failure",
+                message: "error sending mail",
+                errors: [err],
+                data: {}
             });
           });
           console.log(`Mail sent to : ${info.messageId}`);
           return res.json({
-            message: "Mail Sent",
-            response: info.response,
-            timeRemaining: totp.timeRemaining()
+              status: "success",
+              message: "Mail Sent",
+              errors: [],
+              data: {
+                response: info.response,
+                timeRemaining: totp.timeRemaining()
+              }
           });
     } else {
         res.json({
-           message: "unauthorised"
+            status: "failure",
+            message: "unauthorised",
+            errors: [],
+            data: {}
         })
     }
     
@@ -82,11 +97,17 @@ const twoFactorAuth = (req, res) => {
     if(isValid === true) {
         isLoggedIn = true;
         res.json({
-            message: "logged in successfully"
+            status: "success",
+            message: "admin logged in successfully",
+            errors: [],
+            data: {}
         });
     } else {
         res.json({
-            message: "unauthorised"
+            status: "failure",
+            message: "unauthorised",
+            errors: [],
+            data: {}
         });
     }
 }
@@ -95,11 +116,17 @@ const logout = (req, res) => {
     try {
         isLoggedIn = false;
         res.json({
-            message: "admin successfully logged out"
+            status: "success",
+            message: "admin logged out successfully",
+            errors: [],
+            data: {}
         });
     } catch (error) {
         res.json({
-            error: error
+            status: "failure",
+            message: "logout fail",
+            errors: [error],
+            data: {}
         });
     }
 }
@@ -108,16 +135,29 @@ const users = (req, res, next) => {
     if(isLoggedIn === true) {
         User.find(function(err, foundUsers) {
             if(!err) {
-                    res.json(foundUsers);
+                    res.json({
+                        status: "success",
+                        message: "",
+                        errors: [],
+                        data: {
+                            foundItems: foundUsers
+                        }
+                    });
             } else {
                 res.json({
-                    error: err
+                    status: "failure",
+                    message: "err in finding users",
+                    errors: [err],
+                    data: {}
                 });
             }
         });
     } else {
         res.json({
-            message: "unauthorised"
+            status: "failure",
+            message: "unauthorised",
+            errors: [],
+            data: {}
         });
     }
     
@@ -127,16 +167,29 @@ const articles = (req, res, next) => {
     if(isLoggedIn === true) {
         Article.find(function(err, foundArticles) {
             if(!err) {
-                res.json(foundArticles);
+                res.json({
+                    status: "success",
+                    message: "",
+                    errors: [],
+                    data: {
+                        foundItems: foundArticles
+                    }
+                });
             } else {
                 res.json({
-                    error: err
+                    status: "failure",
+                    message: "err in finding articles",
+                    errors: [err],
+                    data: {}
                 });
             }
         });
     } else {
         res.json({
-            message: "unauthorised"
+            status: "failure",
+            message: "unauthorised",
+            errors: [],
+            data: {}
         });
     }
     

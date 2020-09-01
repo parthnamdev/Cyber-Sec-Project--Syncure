@@ -6,8 +6,7 @@ const nodemailer = require("nodemailer");
 const { totp } = require('otplib');
 totp.options = { 
     digits: 8,
-    step: 120,
-    epoch: Date.now()
+    step: 120
    };
 const opts = totp.options;
 const secret = process.env.TOTP_SECRET;
@@ -30,7 +29,10 @@ const login = (req, res, next) => {
             if (err) {
               console.log(err);
               res.json({
+                status: "failure",
                 message: "failed login or incorrect password",
+                errors: err,
+                data: {}
               });
             } else {
               passport.authenticate("local")(req, res, function () {
@@ -48,12 +50,18 @@ const login = (req, res, next) => {
           });
         } else {
           res.json({
-            message: "no user found"
+            status: "failure",
+            message: "no user found",
+            errors: [],
+            data: {}
           })
         }
       } else {
         res.json({
-          error: err,
+          status: "failure",
+          message: "",
+          errors: err,
+          data: {}
         });
       }
     });
@@ -85,16 +93,23 @@ const mail = async (req, res) => {
   };
 
   const info = await transporter.sendMail(mailOptions).catch((err) => {
-    console.log(err);
     res.json({
-      error: err,
+      status: "failure",
+      message: "",
+      errors: err,
+      data: {}
     });
   });
   console.log(`Mail sent to : ${info.messageId}`);
   return res.json({
+    status: "success",
     message: "Mail Sent",
-    response: info.response,
-    timeRemaining: totp.timeRemaining()
+    errors: [],
+    data: {
+      response: info.response,
+      timeRemaining: totp.timeRemaining()
+    }
+    
   });
 };
 
@@ -110,12 +125,20 @@ const twoStepVerification = (req, res) => {
       { expiresIn: "15m" }
     );
     res.json({
+      status: "success",
       meassge: "logged in successfully",
-      token: token,
+      errors: [],
+      data: {
+        token: token
+      }
+      
     });
   } else {
     res.json({
+      status: "failure",
       message: "unauthorised or 2FA failed",
+      errors: [],
+      data: {}
     });
   }
 };
@@ -127,12 +150,20 @@ const logout = (req, res) => {
     // res.json(response);
     req.logout();
     res.json({
+      status: "success",
       message: "successfully logged out",
+      errors: [],
+      data: {}
     });
   })
   .catch(errr => {res.send("err in logging out");});
   } else {
-    res.send("already logged out");
+    res.json({
+      status: "failure",
+      message: "already logged out",
+      errors: [],
+      data: {}
+    });
   }
 };
 

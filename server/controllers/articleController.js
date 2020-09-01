@@ -18,10 +18,20 @@ const axios = require('axios');
 const find = (req, res) => {
     Article.findOne( {username: req.params.username}, function(err, foundArticle) {
         if(!err) {
-            res.json(foundArticle);
+            res.json({
+                status: "success",
+                message: "",
+                errors: [],
+                data: {
+                    foundItems: foundArticle
+                }
+            });
         } else {
             res.json({
-                message: "no user or article found"
+                status: "failure",
+                message: "no user or article found",
+                errors: [],
+                data: {}
             });
         }
     });
@@ -30,19 +40,33 @@ const find = (req, res) => {
 const findPassword = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
     } else {
         Article.findOne( {username: req.body.username}, function(err, foundUser) {
             if(!err && foundUser) {
                 foundUser.passwords.forEach(element => {
                     if(element._id == req.body.id){
-                        res.json(element);
+                        res.json({
+                            status: "success",
+                            message: "",
+                            errors: [],
+                            data: {
+                                foundItems: element
+                            }
+                        });
                     }
                 });
             } else {
                 res.json({
+                    status: "failure",
                     message: "no password/user found",
-                    error: err
+                    errors: [err],
+                    data: {}
                 });
             }
         });
@@ -53,17 +77,29 @@ const findPassword = (req, res) => {
 const findAllPasswords = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
     } else {
         Article.findOne( {username: req.body.username}, function(err, foundUser) {
             if(!err && foundUser) {
                 res.json({
-                    passwords: foundUser.passwords
+                    status: "success",
+                    message: "",
+                    errors: [],
+                    data: {
+                        foundItems: foundUser.passwords
+                    }
                 })
             } else {
                 res.json({
+                    status: "failure",
                     message: "no user/password found",
-                    error: err
+                    errors: [err],
+                    data: {}
                 });
             }
         });
@@ -74,7 +110,12 @@ const findAllPasswords = (req, res) => {
 const addMedia = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
     } else {
         
         Article.findOne( {username: req.body.username}, function(err, foundArticle) {
@@ -109,7 +150,8 @@ const addMedia = (req, res) => {
                                 axios.get('https://cloud-api.yandex.net/v1/disk/resources/upload',{ params: { path: '/Syncure_data/'+media_path}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
                                 .then(function (response) {
                                     
-                                      axios.put(response.data.href, fs.createReadStream('./uploads/'+media_path)).then( resp => { 
+                                      axios.put(response.data.href, fs.createReadStream('./uploads/'+media_path))
+                                      .then( resp => { 
                                         fs.unlink(req.file.path, (err) => {
                                             if (err) {
                                               console.error(err)
@@ -117,23 +159,46 @@ const addMedia = (req, res) => {
                                             }
                                             //file removed
                                           })
-                                        res.json({message: "media stored successfully", image_id: image_id})}).catch(errr => {res.send("err")});
+                                        res.json({
+                                            status: "success",
+                                            message: "media stored successfully. Store media_id to access the media directly",
+                                            errors: [],
+                                            data : {
+                                                media_id: image_id
+                                            }
+                                            
+                                        })})
+                                        .catch(errr => {res.json({
+                                            status: "failure",
+                                            message: "disk api err",
+                                            errors: [errr],
+                                            data: {}
+                                        })});
                                 })
                                 .catch(function (error) {
                                       // handle error
                                       res.json({
-                                          message: "err"
-                                      })
+                                        status: "failure",
+                                        message: "disk api err",
+                                        errors: [error],
+                                        data: {}
+                                    })
                                     });
                             } else {
                                 res.json({
-                                    error: err
+                                    status: "failure",
+                                    message: "err in saving database",
+                                    errors: [err],
+                                    data: {}
                                 });
                             }
                         })
                     } else {
                         res.json({
-                            message: "storage size exceed or file too big"
+                            status: "failure",
+                            message: "storage size exceed or file too big",
+                            errors: [],
+                            data: {}
                         });
                         const fileThatExceededLimit = req.file.path;
 
@@ -148,15 +213,18 @@ const addMedia = (req, res) => {
                 }
                 catch(err) {
                     res.json({
-                        message:"invalid file or no file",
-                        note: "give username attribute before file if not done so",
-                        error: err
+                        status: "failure",
+                        message:"invalid file or no file. (Send 'username' attribute before 'media' if not done so. If already done, ignore.)",
+                        errors: [err],
+                        data: {}
                     });
                   }
             } else {
                 res.json({
+                    status: "failure",
                     message: "error or user not found",
-                    error: err
+                    errors: [err],
+                    data: {}
                 });
             }
         });
@@ -169,10 +237,15 @@ const addMedia = (req, res) => {
 const addPassword = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
     } else {
         Article.findOne( {username: req.body.username}, function(err, foundArticle) {
-            if(!err) {
+            if(!err && foundArticle) {
                 const newPassword = {
                     title: req.body.passwordTitle,
                     code: req.body.passwordCode
@@ -187,30 +260,44 @@ const addPassword = (req, res) => {
                 foundArticle.save(function(err) {
                     if(!err){
                         res.json({
+                            status: "success",
                             message: "password stored successfully",
-                            id: password_id
+                            errors: [],
+                            data: {
+                                password_id: password_id
+                            }
                         })
                     } else {
                         res.json({
-                            error: err
+                            status: "failure",
+                            message: "err in saving database",
+                            errors: [err],
+                            data: {}
                         });
                     }
                 })
                
             } else {
                 res.json({
-                    error: err
+                    status: "failure",
+                    message: "err or no user found",
+                    errors: [err],
+                    data: {}
                 });
             }
         });
     }
-    
 }
 
 const removeMedia = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
     } else {
         Article.findOne( {username: req.body.username}, function(err, foundArticle) {
             if(!err && foundArticle) {
@@ -228,24 +315,38 @@ const removeMedia = (req, res) => {
                                 foundArticle.save(function(err) {
                                     if(!err){
                                         res.json({
-                                            message: "media deleted successfully"
+                                            status: "success",
+                                            message: "media deleted successfully",
+                                            errors: [],
+                                            data: {}
                                         });
                                     } else {
                                         res.json({
-                                            error: err
+                                            status: "failure",
+                                            message: "err in saving database",
+                                            errors: [err],
+                                            data: {}
                                         });
                                     }
                                 });
                             })
                         .catch(errr => {
-                            res.json(errr);
+                            res.json({
+                                status: "failure",
+                                message: "disk api err",
+                                errors: [errr],
+                                data: {}
+                            });
                         });
                     }
                 });
                
             } else {
                 res.json({
-                    message: "no media/user found"
+                    status: "failure",
+                    message: "no media/user found",
+                    errors: [err],
+                    data: {}
                 });
             }
         });
@@ -256,21 +357,32 @@ const removeMedia = (req, res) => {
 const removePassword = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
     } else {
         Article.findOne( {username: req.body.username}, function(err, foundArticle) {
-            if(!err) {
+            if(!err && foundArticle) {
                 foundArticle.passwords.forEach(element => {
                     if(element._id == req.body.id){
                         foundArticle.passwords.pull(element);
                         foundArticle.save(function(err) {
                             if(!err){
                                 res.json({
-                                    message: "password deleted successfully"
+                                    status: "success",
+                                    message: "password deleted successfully",
+                                    errors: [],
+                                    data: {}
                                 });
                             } else {
                                 res.json({
-                                    error: err
+                                    status: "failure",
+                                    message: "err in saving database",
+                                    errors: [err],
+                                    data: {}
                                 });
                             }
                         });
@@ -279,8 +391,10 @@ const removePassword = (req, res) => {
                
             } else {
                 res.json({
+                    status: "failure",
                     message: "no password found",
-                    error: err
+                    errors: [err],
+                    data: {}
                 });
             }
         });
@@ -291,7 +405,12 @@ const removePassword = (req, res) => {
 const getMediaById = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
     } else {
         Article.findOne( {username: req.body.username}, function(err, foundUser) {
             if(!err && foundUser) {
@@ -302,8 +421,10 @@ const getMediaById = (req, res) => {
                 });
             } else {
                 res.json({
+                    status: "failure",
                     message: "no media/user found",
-                    error: err
+                    errors: [err],
+                    data: {}
                 });
             }
         });
@@ -314,7 +435,12 @@ const getMediaById = (req, res) => {
 const downloadMediaById = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
     } else {
         Article.findOne( {username: req.body.username}, function(err, foundUser) {
             if(!err && foundUser) {
@@ -325,8 +451,10 @@ const downloadMediaById = (req, res) => {
                 });
             } else {
                 res.json({
+                    status: "failure",
                     message: "no media/user found",
-                    error: err
+                    errors: [err],
+                    data: {}
                 });
             }
         });
@@ -336,7 +464,12 @@ const downloadMediaById = (req, res) => {
 const getMedia = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
     } else {
         if(req.params.username) {
             axios.put('https://cloud-api.yandex.net/v1/disk/resources/publish', null, { params: { path: '/Syncure_data/'+req.params.username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
@@ -348,13 +481,26 @@ const getMedia = (req, res) => {
                     res.redirect(result.data.public_url+'/'+req.params.media);
                 })
                 .catch(err => {
-                    res.send("error in getting media")
+                    res.json({
+                        status: "failure",
+                        message: "disk api err",
+                        errors: [err],
+                        data: {}
+                    })
                 })
             })
-            .catch(errr => {res.send("err in publish media");});
+            .catch(errr => {res.json({
+                status: "failure",
+                message: "disk api err",
+                errors: [errr],
+                data: {}
+            });});
         } else {
             res.json({
-                message: "unauthorised user"
+                status: "failure",
+                message: "unauthorised user",
+                errors: [],
+                data: {}
             })
         }
     }
@@ -363,7 +509,12 @@ const getMedia = (req, res) => {
 const downloadMedia = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
     } else {
         if(req.params.username) {
             axios.get('https://cloud-api.yandex.net/v1/disk/resources/download', { params: { path: '/Syncure_data/'+req.params.username+'/'+req.params.media}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
@@ -371,10 +522,18 @@ const downloadMedia = (req, res) => {
                 // res.json(response);
                 res.redirect(response.data.href)
             })
-            .catch(errr => {res.send("err in fetching media");});
+            .catch(errr => {res.json({
+                status: "failure",
+                message: "disk api err",
+                errors: [errr],
+                data: {}
+            });});
         } else {
             res.json({
-                message: "unauthorised user"
+                status: "failure",
+                message: "unauthorised user",
+                errors: [],
+                data: {}
             })
         }
     }
@@ -383,17 +542,29 @@ const downloadMedia = (req, res) => {
 const getMediaInfo = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
     } else {
         Article.findOne( {username: req.body.username}, function(err, foundUser) {
             if(!err && foundUser) {
                 res.json({
-                    media: foundUser.media
+                    status: "success",
+                    message: "",
+                    errors: [],
+                    data: {
+                        foundItems: foundUser.media 
+                    }
                 });
             } else {
                 res.json({
+                    status: "failure",
                     message: "no media/user found",
-                    error: err
+                    errors: [err],
+                    data: {}
                 });
             }
         });
@@ -403,31 +574,38 @@ const getMediaInfo = (req, res) => {
 const getMediaInfoById = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
     } else {
         Article.findOne( {username: req.body.username}, function(err, foundUser) {
             if(!err && foundUser) {
                 foundUser.media.forEach(element => {
                     if(element._id == req.body.id){
                         res.json({
-                            media: element
+                            status: "success",
+                            message: "",
+                            errors: [],
+                            data: {
+                                foundItems: element 
+                            }
                         });
                     }
                 });
             } else {
                 res.json({
+                    status: "failure",
                     message: "no media/user found",
-                    error: err
+                    errors: [err],
+                    data: {}
                 });
             }
         });
     }
 }
-
-// const testPublish = (req, res) => {
-//     // const data = null;
-//     axios.put('https://cloud-api.yandex.net/v1/disk/resources/publish', null, { params: { path: '/Downloads'}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}}).then( response => {console.log(response);res.json(response);}).catch(errr => {res.json(errr);});
-// }
 
 module.exports = {
     find, addMedia, addPassword, removeMedia, removePassword, findAllPasswords, findPassword, getMediaById, getMedia, downloadMedia, downloadMediaById, getMediaInfo, getMediaInfoById

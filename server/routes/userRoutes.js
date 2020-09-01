@@ -40,5 +40,5 @@ router.post('/updateName', authenticate, [
 router.post('/remove', authenticate, [
     body('username','username should be minimum of 6 characters').isLength({min: 6})
     ], userController.remove);
-router.post('/testMove', userController.testMove)
+
 module.exports = router;
