@@ -11,8 +11,8 @@ router.get('/mail', adminController.mail);
 router.post('/verify', [
     body('totp','length of OTP should be 8').isLength(8)
     ], adminController.twoFactorAuth);
-router.post('/users', adminController.users);
-router.post('/artcles',adminController.articles);
+router.get('/users', adminController.users);
+router.get('/artcles',adminController.articles);
 router.post('/logout',adminController.logout);
 
 module.exports = router;
