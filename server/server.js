@@ -27,7 +27,8 @@ app.use(expressSession({secret: process.env.SESSION_SECRET, saveUninitialized: f
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongoose.connect("mongodb://localhost:27017/projDB", { useNewUrlParser:true, useUnifiedTopology:true });
+const uri = `${"mongodb+srv://"+process.env.ATLAS_USER+":"+process.env.ATLAS_PASSWORD+"@"+process.env.ATLAS_CLUSTER+".dcdll.mongodb.net/"+process.env.ATLAS_DB_NAME+"?retryWrites=true&w=majority"}`;
+mongoose.connect(uri, { useNewUrlParser:true, useUnifiedTopology:true });
 const db = mongoose.connection;
 
 db.on("error", (err) => {
