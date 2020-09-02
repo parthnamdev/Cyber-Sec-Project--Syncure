@@ -58,12 +58,17 @@ User.find({},(err,found) => {
 app.get("/", (req, res) => {
     if(req.isAuthenticated()) {
         res.json({
-            api: "Syncure - safely sync",
-            message: "please refer the documentation for using the api"
+            status: "success",
+            message: "Syncure app api - please refer the documentation for using the api",
+            errors: [],
+            data: {}
         });
     } else {
         res.json({
-            message: "unauthorised"
+            status: "failure",
+            message: "unauthorised",
+            errors: [],
+            data: {}
         });
     }
     
@@ -76,7 +81,13 @@ app.listen(process.env.PORT || 5000, function() {
 //The 404 Route 
 app.get('*', function(req, res){
     res.status(404).json({
+        status: "failure",
         message: "File not found or the route doesn't exist. Please refer the documentation",
-        error: "404"
+        errors: [
+            {
+                type: "404 - file not found"
+            }
+        ],
+        data: {}
     });
 });
