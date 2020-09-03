@@ -118,9 +118,6 @@ const mail = async (req, res) => {
 const twoStepVerification = (req, res) => {
 
   const isValid = totp.check(req.body.totp, secret);
-  //console.log(isValid);
-  //console.log(req);
-  //console.log(req.device);
   console.log(os.hostname());
   if (req.isAuthenticated() && isValid == true) {
     

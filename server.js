@@ -6,7 +6,7 @@ const morgan = require("morgan");
 const passport = require("passport");
 const cors = require('cors');
 const helmet = require('helmet');
-const expressSession = require('express-session');
+// const expressSession = require('express-session');
 const { body, validationResult } = require('express-validator');
 const app = express();
 app.use(cors());
@@ -25,7 +25,7 @@ app.use(bodyParser.urlencoded({extended:true}));
 app.use(device.capture({parseUserAgent: true}));
 
 // app.use( mediaAccess, express.static(__dirname + "/uploads"));
-app.use(expressSession({secret: process.env.SESSION_SECRET, saveUninitialized: false, resave: false}));
+// app.use(expressSession({secret: process.env.SESSION_SECRET, saveUninitialized: false, resave: false}));
 app.use(passport.initialize());
 app.use(passport.session());
 
