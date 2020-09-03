@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { body, validationResult } = require('express-validator');
+const { body, param, validationResult } = require('express-validator');
 const userController = require('../controllers/userController');
 const authenticate = require('../middleware/authenticate');
 const articleController = require('../controllers/articleController');
@@ -11,10 +11,12 @@ router.get('/storage/:username', authenticate, userController.storage);
 router.get('/mail', userController.mail);
 router.get('/mailForEmailUpdate', userController.mailForEmailUpdate);
 router.post('/verify/:username', [
+    param('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('password', 'password should be minimum of 6 characters').isLength({min: 6}),
     body('totp','length of OTP should be 8').isLength(8)
     ], userController.twoFactorAuth);
 router.post('/verifyMail/:username', authenticate, [
+    param('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('totp','length of OTP should be 8').isLength(8)
 ], userController.emailtwoFactorAuth);
 router.post('/register', [

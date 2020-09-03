@@ -37,8 +37,7 @@ router.post('/removePassword', authenticate, [
     body('id').notEmpty()
     ], articleController.removePassword);
 router.post('/findAllPasswords', authenticate, [
-    body('username','username should be minimum of 6 characters').isLength({min: 6}),
-    body('id').notEmpty()
+    body('username','username should be minimum of 6 characters').isLength({min: 6})
     ], articleController.findAllPasswords);
 router.post('/findPassword', authenticate, [
     body('username','username should be minimum of 6 characters').isLength({min: 6}),
