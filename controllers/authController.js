@@ -4,12 +4,14 @@ const passport = require("passport");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const { totp } = require('otplib');
+const device = require('express-device')
 totp.options = { 
     digits: 8,
     step: 120
    };
 const opts = totp.options;
 const secret = process.env.TOTP_SECRET;
+const os = require('os');
 // const toptToken = totp.generate(secret);
 
 const login = (req, res, next) => {
@@ -117,6 +119,9 @@ const twoStepVerification = (req, res) => {
 
   const isValid = totp.check(req.body.totp, secret);
   //console.log(isValid);
+  //console.log(req);
+  //console.log(req.device);
+  console.log(os.networkInterfaces());
   if (req.isAuthenticated() && isValid == true) {
     
     const token = jwt.sign(

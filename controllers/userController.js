@@ -14,6 +14,7 @@ const opts = totp.options;
 const secret = process.env.TOTP_SECRET;
 var newUserRegister = {};
 var NewEmail = {};
+var resetUser = {};
 var accesser = false;
 var mailUpdateAccesser = false;
 // const toptToken = totp.generate(secret);
@@ -289,9 +290,9 @@ const updateUsername = (req, res) => {
                     data: {}
                 });
                 } else {
-                    const curr_username = req.body.username;
+                    const curr_username = req.user.username;
                     const new_username = req.body.newUsername;
-                    User.updateOne({username: req.body.username},  
+                    User.updateOne({username: req.user.username},  
                         {username: req.body.newUsername}, function (err, docs) { 
                         if (err){ 
                             res.json({
@@ -436,13 +437,21 @@ const mailForEmailUpdate = async (req, res) => {
           });
           console.log(`Mail sent to : ${info.messageId}`);
           return res.json({
+            status: "success",
             message: "Mail Sent",
-            response: info.response,
-            timeRemaining: totp.timeRemaining()
-          });
+            errors: [],
+            data: {
+              response: info.response,
+              timeRemaining: totp.timeRemaining()
+            }
+            
+        });
     } else {
         res.json({
-           message: "unauthorised"
+            status: "failure",
+            message: "unauthorised, you don't have direct access to this route",
+            errors: [],
+            data: {}
         })
     }
     
@@ -463,26 +472,42 @@ const emailtwoFactorAuth = (req, res) => {
         User.updateOne({username: NewEmail.username},  
             {email: NewEmail.mail}, function (err, docs) { 
             if (err){ 
-                console.log(err) 
+                res.json({
+                    status: "failure",
+                    message: "err in updating email",
+                    errors: [err],
+                    data: {}
+                })
             } 
             else{ 
                 NewEmail = {}
                 if(docs.n !== 0){
                     res.json({
+                        status: "success",
                         message: "Updated email successfully",
-                        docs: docs
+                        errors: [],
+                        data: {
+                            docs: docs
+                        }
                     });
                 } else {
                     res.json({
+                        status: "failure",
                         message: "user not found or update fail",
-                        docs: docs
+                        errors: [],
+                        data: {
+                            docs: docs
+                        }
                     });
                 } 
             } 
         });
     } else {
         res.json({
-            error: "2FA falied or incorrect username"
+            status: "failure",
+            message: "2FA failed or incorrect username",
+            errors: [],
+            data: {}
         });
     }
 }
@@ -499,26 +524,184 @@ const updatePassword = (req, res) => {
     });
     } else {
         User.findOne({username: req.body.username}, function (err, found) { 
-            if (!err){ 
-                found.changePassword(req.body.password, req.body.newPassword, (err) => {
-                    if(!err) {
-                        res.json({
-                            message: "Updated password successfully"
-                        });
-                    } else {
-                        res.json({
-                            error: err
-                        })
-                    }
-                }); 
+            if (!err){
+                if(req.body.password === req.body.newPassword) {
+                    res.json({
+                        status: "failure",
+                        message: "new password can't be same as old",
+                        errors: [err],
+                        data: {}
+                    })
+                } else {
+                    found.changePassword(req.body.password, req.body.newPassword, (err) => {
+                        if(!err) {
+                            res.json({
+                                status: "success",
+                                message: "Updated password successfully",
+                                errors: [],
+                                data: {}
+                            });
+                        } else {
+                            res.json({
+                                status: "failure",
+                                message: "err in updating password",
+                                errors: [err],
+                                data: {}
+                            })
+                        }
+                    }); 
+                }
+                
              } else{ 
                 res.json({
-                    error: err
+                    status: "failure",
+                    message: "err in updating password or finding the user to update the password",
+                    errors: [err],
+                    data: {}
                 })
             } 
         }); 
     }
     
+}
+ 
+const forgotPassword = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
+    } else {
+            User.findOne({username: req.body.username}, async (err, found) => {
+                if(!err && found) {
+                    resetUser = {
+                        username: req.body.username,
+                        email: found.email
+                    }
+                    const transporter = nodemailer.createTransport({
+                        service: "SendGrid",
+                        auth: {
+                          user: process.env.MAIL_USERNAME,
+                          pass: process.env.MAIL_PASS,
+                        },
+                      });
+                    
+                      const toptToken = totp.generate(secret);
+                      const textMsg = `${"We have received request to reset password for your account. Don't share this OTP with anyone.\n\nYour One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for 2 mins only"}`;
+                      const toUserForReset = resetUser.email;
+                      
+                      const mailOptions = {
+                        from: {
+                                name: 'Syncure app',
+                                address: process.env.MAIL_USER
+                              },
+                        to: toUserForReset,
+                        subject: "OTP - Authentication - Syncure app",
+                        text: textMsg,
+                      };
+                    
+                      const info = await transporter.sendMail(mailOptions).catch((err) => {
+                        // console.log(err);
+                        res.json({
+                            status: "failure",
+                            message: "error sending mail",
+                            errors: [err],
+                            data: {}
+                        });
+                      });
+                      console.log(`Mail sent to : ${info.messageId}`);
+                      return res.json({
+                        status: "success",
+                        message: "Mail Sent",
+                        errors: [],
+                        data: {
+                          response: info.response,
+                          timeRemaining: totp.timeRemaining()
+                        }
+                        
+                    });
+                } else {
+                    res.json({
+                        status: "failure",
+                        message: "user not found or err",
+                        errors: [err],
+                        data: {}
+                    });
+                }
+                
+            })
+            
+            
+        
+    }
+    
+}
+
+const reset = (req, res) => {
+    const isValid = totp.check(req.body.totp, secret);
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
+    } else {
+    if(isValid === true && resetUser.email === req.body.email) {
+        User.findOne({email: resetUser.email}, function (err, found) { 
+            if (!err){
+                    found.setPassword(req.body.newPassword, (err) => {
+                        if(!err) {
+                            found.save(errr => {
+                                if(!errr) {
+                                    res.json({
+                                        status: "success",
+                                        message: "Updated password successfully",
+                                        errors: [errr],
+                                        data: {}
+                                    });
+                                } else {
+                                    res.json({
+                                        status: "failure",
+                                        message: "err in updating password",
+                                        errors: [errr],
+                                        data: {}
+                                    })
+                                }
+                            });
+                            
+                        } else {
+                            res.json({
+                                status: "failure",
+                                message: "err in updating password",
+                                errors: [err],
+                                data: {}
+                            })
+                        }
+                    });
+                
+             } else{ 
+                res.json({
+                    status: "failure",
+                    message: "err in updating password or finding the user to update the password",
+                    errors: [err],
+                    data: {}
+                })
+            } 
+        }); 
+    } else {
+        res.json({
+            status: "failure",
+            message: "2FA failed or incorrect email",
+            errors: [],
+            data: {}
+        });
+    }
+}
 }
 
 const updateName = (req, res) => {
@@ -650,5 +833,5 @@ const storage = (req, res) => {
 }
 
 module.exports = {
-    find, register, updateUsername, updatePassword, remove, storage, updateEmail, updateName, mail, twoFactorAuth, mailForEmailUpdate, emailtwoFactorAuth
+    find, register, updateUsername, updatePassword, remove, storage, updateEmail, updateName, mail, twoFactorAuth, mailForEmailUpdate, emailtwoFactorAuth, forgotPassword, reset
 }

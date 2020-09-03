@@ -14,6 +14,7 @@ app.use(helmet());
 const jwt = require("jsonwebtoken");
 const User =  require('./models/userModel');
 const fs = require('fs');
+const device = require('express-device');
 
 const userRouter = require("./routes/userRoutes");
 const articleRouter = require("./routes/articleRoutes");
@@ -21,6 +22,7 @@ const authRouter = require('./routes/authRoutes');
 const adminRouter = require('./routes/adminRoutes');
 
 app.use(bodyParser.urlencoded({extended:true}));
+app.use(device.capture({parseUserAgent: true}));
 
 // app.use( mediaAccess, express.static(__dirname + "/uploads"));
 app.use(expressSession({secret: process.env.SESSION_SECRET, saveUninitialized: false, resave: false}));
