@@ -79,7 +79,7 @@ const register = (req, res) => {
                       data: {}
                     });
                 } else {
-                    newUserRegister = {username: req.body.username, email: req.body.email , name: req.body.name};
+                    newUserRegister = {username: req.body.username, email: req.body.email , name: req.body.name, twoFA: true};
                     accesser = true;
                     res.redirect("mail");
                     
@@ -413,7 +413,7 @@ const mailForEmailUpdate = async (req, res) => {
           });
         
           const toptToken = totp.generate(secret);
-          const textMsg = `${"Your One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for 2 mins only"}`;
+          const textMsg = `${"We have received request to update email for your account. Don't share this OTP with anyone.\n\nYour One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for 2 mins only"}`;
           const toUserForEmail = NewEmail.mail;
         
           const mailOptions = {
@@ -652,7 +652,7 @@ const reset = (req, res) => {
     });
     } else {
     if(isValid === true && resetUser.email === req.body.email) {
-        User.findOne({email: resetUser.email}, function (err, found) { 
+        User.findOne({username: resetUser.username}, function (err, found) { 
             if (!err){
                     found.setPassword(req.body.newPassword, (err) => {
                         if(!err) {

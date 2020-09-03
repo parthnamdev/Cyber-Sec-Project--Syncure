@@ -6,7 +6,7 @@ const morgan = require("morgan");
 const passport = require("passport");
 const cors = require('cors');
 const helmet = require('helmet');
-// const expressSession = require('express-session');
+const expressSession = require('express-session');
 const { body, validationResult } = require('express-validator');
 const app = express();
 app.use(cors());
@@ -14,7 +14,6 @@ app.use(helmet());
 const jwt = require("jsonwebtoken");
 const User =  require('./models/userModel');
 const fs = require('fs');
-const device = require('express-device');
 
 const userRouter = require("./routes/userRoutes");
 const articleRouter = require("./routes/articleRoutes");
@@ -22,10 +21,9 @@ const authRouter = require('./routes/authRoutes');
 const adminRouter = require('./routes/adminRoutes');
 
 app.use(bodyParser.urlencoded({extended:true}));
-app.use(device.capture({parseUserAgent: true}));
 
 // app.use( mediaAccess, express.static(__dirname + "/uploads"));
-// app.use(expressSession({secret: process.env.SESSION_SECRET, saveUninitialized: false, resave: false}));
+app.use(expressSession({secret: process.env.SESSION_SECRET, saveUninitialized: false, resave: false}));
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -38,6 +36,14 @@ db.on("error", (err) => {
 });
 
 db.once("open", () => {
+    User.find({},(err,found) => {
+        found.forEach(element => {
+            const create_folder = `${"./uploads/" + element.username}`;
+            fs.mkdir(create_folder, {recursive: true}, function(err) {
+                if(err) throw err;
+            });
+        });
+    });
     console.log("database connected");
 });
 
@@ -48,14 +54,6 @@ app.use("/api/article", articleRouter);
 app.use("/api", authRouter);
 app.use("/admin", adminRouter);
 
-User.find({},(err,found) => {
-    found.forEach(element => {
-        const create_folder = `${"./uploads/" + element.username}`;
-        fs.mkdir(create_folder, {recursive: true}, function(err) {
-            if(err) throw err;
-        });
-    });
-});
 
 app.get("/", (req, res) => {
     if(req.isAuthenticated()) {

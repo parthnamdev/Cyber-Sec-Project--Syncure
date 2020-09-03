@@ -6,7 +6,9 @@ const userSchema = new mongoose.Schema({
     username: String,
     email: String,
     name: String,
-    password: String
+    password: String,
+    twoFA: Boolean ,
+    device: [String]
 });
 userSchema.plugin(passportLocalMongoose);
 const User = mongoose.model('user', userSchema);
