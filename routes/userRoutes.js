@@ -45,6 +45,7 @@ router.post('/forgotPassword', [
     ], userController.forgotPassword);
 router.post('/resetPassword', [
     body('email', 'invalid email').isEmail(),
-    body('totp','length of OTP should be 8').isLength(8)
+    body('totp','length of OTP should be 8').isLength(8),
+    body('newPassword', 'newPassword should be minimum of 6 characters').isLength({min: 6})
     ], userController.reset);
 module.exports = router;

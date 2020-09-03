@@ -235,7 +235,8 @@ const toggleTwoFA = (req, res) => {
                 data: {}
               });
             } else {
-              let tempToBePulled;
+              if(req.body.device) {
+                let tempToBePulled;
               await found.device.forEach(element => {
                 if(req.body.device == element){
                   tempToBePulled = element;
@@ -261,6 +262,15 @@ const toggleTwoFA = (req, res) => {
                       });
                     }
                 });
+              } else {
+                res.json({
+                  status: "failure",
+                  message: "'device' attribute should be of length 32",
+                  errors: [],
+                  data: {}
+                });
+              }
+              
             }
           }
           
