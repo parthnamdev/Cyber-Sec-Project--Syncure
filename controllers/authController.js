@@ -121,7 +121,7 @@ const twoStepVerification = (req, res) => {
   //console.log(isValid);
   //console.log(req);
   //console.log(req.device);
-  console.log(os.networkInterfaces());
+  console.log(os.hostname());
   if (req.isAuthenticated() && isValid == true) {
     
     const token = jwt.sign(
