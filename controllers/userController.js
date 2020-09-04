@@ -6,6 +6,7 @@ const axios = require('axios');
 const passport = require('passport');
 const nodemailer = require("nodemailer");
 const { totp } = require('otplib');
+const { error } = require('console');
 totp.options = { 
     digits: 8,
     step: 120
@@ -79,7 +80,7 @@ const register = (req, res) => {
                       data: {}
                     });
                 } else {
-                    newUserRegister = {username: req.body.username, email: req.body.email , name: req.body.name, twoFA: true};
+                    newUserRegister = {username: req.body.username, email: req.body.email , name: req.body.name, twoFA: true}
                     accesser = true;
                     res.redirect("mail");
                     
@@ -159,62 +160,42 @@ const twoFactorAuth = (req, res) => {
             data: {}
           });
     } else {
-    if(isValid === true && req.params.username === newUserRegister.username) {
-        User.findOne( {username: req.params.username}, function(err, foundUser) {
-            if(err) {
-                res.json({
-                    status: "failure",
-                    message: "",
-                    errors: [err],
-                    data: {}
-                });
-            } else {
-                if(foundUser) {
-                    res.json({
-                        status: "failure",
-                        message: "username already exist !",
-                        errors: [],
-                        data: {}
-                    });
-                } else {
-                    User.register(newUserRegister, req.body.password, function(err, user){
-                        if(err){
+    if(isValid === true && req.params.username == newUserRegister.username) {
+        
+                User.register(newUserRegister, req.body.password, function(err, user) {
+                    if(!err) {
+                        const tempStoreUser = req.params.username;
+                        
+                        axios.put('https://cloud-api.yandex.net/v1/disk/resources', null,{ params: { path: '/Syncure_data/'+tempStoreUser}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+                        .then(response => {
+                            console.log("successfully created cloud directory");
+                        })
+                        .catch(errr => {
                             res.json({
                                 status: "failure",
-                                message: "",
-                                errors: [err],
+                                message: "disk api err",
+                                errors: [errr],
                                 data: {}
                             });
-                        } else{
-                            axios.put('https://cloud-api.yandex.net/v1/disk/resources', null,{ params: { path: '/Syncure_data/'+req.body.username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
-                                .then( response => {
-                                    // res.json({
-                                    //     message:"created"
-                                    // });
-                                    passport.authenticate("local")(req, res, function(){
-                                        console.log("succesfully added new user");
-                                    });
-                                    const newArticle = new Article({
-                                        username: req.body.username,
-                                        memoryUsed: "0.00"
-                                    });
-                                    const folder = `${"./uploads/" + req.body.username}`;
-                                
-                                    fs.mkdir(folder, {recursive: true}, function(err) {
-                                        if(err) throw err;
-                                    });
-                                    newUserRegister = {}
-                                    // newUser.save(function(err) {
-                                    //     if(!err){
-                                    //         console.log("succesfully added new user");
-                                    //     } else {
-                                    //         res.json({
-                                    //             error: err
-                                    //         });
-                                    //     }
-                                    // });
-                                    newArticle.save(function(err) {
-                                        if(!err){
+                        })
+                        .then(() => {
+                            
+                            // passport.authenticate("local")(req, res, function(){
+                            //     console.log("succesfully added new user");
+                            // });
+                            const newArticle = new Article({
+                                username: tempStoreUser,
+                                memoryUsed: "0.00"
+                            });
+                            const folder = `${"./uploads/" + tempStoreUser}`;
+                            
+                            newUserRegister = {};
+                            
+                            newArticle.save(function(err) {
+                                if(!err){
+                                    fs.mkdir(folder, {recursive: true}, function(erro) {
+                                        if(!erro) {
+                                            console.log("successfully created local directory");
                                             res.json({
                                                 status: "success",
                                                 message: "succesfully added new user",
@@ -224,33 +205,32 @@ const twoFactorAuth = (req, res) => {
                                         } else {
                                             res.json({
                                                 status: "failure",
-                                                message: "",
-                                                errors: [err],
+                                                message: "err in creating local directory",
+                                                errors: [erro],
                                                 data: {}
                                             });
                                         }
                                     });
-                                })
-                                .catch(errr => {
+                                   
+                                } else {
                                     res.json({
                                         status: "failure",
-                                        message: "disk api err",
-                                        errors: [errr],
+                                        message: "err in saving database",
+                                        errors: [err],
                                         data: {}
                                     });
-                                });
-                            
-                        }
-                    });
-                }
-            }
-        });
-        
-        // const newUser = new User({
-        //     username: req.body.username,
-        //     password: req.body.password,
-        //     email: req.body.email
-        // });
+                                }
+                            });
+                        })
+                    } else {
+                        res.json({
+                            status: "failure",
+                            message: "err in registering user",
+                            errors: [err],
+                            data: {}
+                        });
+                    }
+                });
         
     } else {
         res.json({
@@ -338,21 +318,26 @@ const updateUsername = (req, res) => {
                                             else{
                                                 const currPath = `${"./uploads/" + curr_username}`;
                                                 const newPath = `${"./uploads/" + new_username}`;
-                                                fs.rename(currPath, newPath, function(err) {
-                                                    if (err) {
-                                                      console.log(err)
+                                                fs.rename(currPath, newPath, function(erro) {
+                                                    if (!erro) {
+                                                      console.log("successfully renamed local directory");
+                                                      res.json({
+                                                            status: "success",
+                                                            message: "Updated username successfully",
+                                                            errors: [],
+                                                            data: {
+                                                                docs: docs
+                                                            }
+                                                        });
                                                     } else {
-                                                      console.log("Successfully renamed local directory.")
+                                                        res.json({
+                                                                status: "failure",
+                                                                message: "err in renaming local directory",
+                                                                errors: [erro],
+                                                                data: {}
+                                                            });
                                                     }
                                                   })
-                                                res.json({
-                                                    status: "success",
-                                                    message: "Updated username successfully",
-                                                    errors: [],
-                                                    data: {
-                                                        docs: docs
-                                                    }
-                                                });
                                             } 
                                         });
                                     } else {
@@ -764,11 +749,21 @@ const remove = (req, res) => {
             if(!err) {
                 axios.delete('https://cloud-api.yandex.net/v1/disk/resources', { params: { path: '/Syncure_data/'+req.body.username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
                 .then( response => {
+                    console.log("successfully deleted cloud dir");
                     const folderToDelete = `${"./uploads/" + req.body.username}`;
-                    fs.rmdir(folderToDelete, {recursive: true}, function(err) {
-                        if(err) throw err;
+                    fs.rmdir(folderToDelete, {recursive: true}, function(erro) {
+                        if(!erro) {
+                            console.log("succesfully deleted local dir");
+                        } else {
+                            res.json({
+                                status: "failure",
+                                message: "err in deleting local directory",
+                                errors: [erro],
+                                data: {}
+                            });
+                        }
                     });
-                    console.log("succesfully deleted user");
+                    
                     })
                 .catch(errr => {
                     res.json({
@@ -777,25 +772,28 @@ const remove = (req, res) => {
                         errors: [errr],
                         data: {}
                     });
-                });
+                })
+                .then(() => {
+                    Article.deleteOne( {username: req.body.username}, function(err) {
+                        if(!err) {
+                            res.json({
+                                status: "success",
+                                message: "successfully deleted user and all media",
+                                errors: [err],
+                                data: {}
+                            });
+                        } else {
+                            res.json({
+                                status: "failure",
+                                message: "err deleting media from database",
+                                errors: [err],
+                                data: {}
+                            });
+                        }
+                    }); 
+                })
                 
-                Article.deleteOne( {username: req.body.username}, function(err) {
-                    if(!err) {
-                        res.json({
-                            status: "success",
-                            message: "successfully deleted user and all media",
-                            errors: [err],
-                            data: {}
-                        });
-                    } else {
-                        res.json({
-                            status: "failure",
-                            message: "err deleting media from database",
-                            errors: [err],
-                            data: {}
-                        });
-                    }
-                }); 
+                
             } else {
                 res.json({
                     status: "failure",
