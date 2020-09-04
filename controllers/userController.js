@@ -293,17 +293,17 @@ const updateUsername = (req, res) => {
                                             const mediaName = element.path.split('/',2)
                                             const mName = mediaName[1];
                                             element.path = new_username+'/'+mName;
-                                            foundUser.save(errr => {
-                                                if(errr) {
-                                                    res.json({
-                                                        status: "failure",
-                                                        message: "err in changing paths in schema/database",
-                                                        errors: [errr]
-                                                    })
-                                                } else {
-                                                    console.log("changed paths successfully");
-                                                }
-                                            });
+                                        });
+                                        foundUser.save(function(errr) {
+                                            if(errr) {
+                                                res.json({
+                                                    status: "failure",
+                                                    message: "err in changing paths in schema/database",
+                                                    errors: [errr]
+                                                })
+                                            } else {
+                                                console.log("changed paths successfully");
+                                            }
                                         });
                                         Article.updateOne({username: curr_username},  
                                             {username: new_username}, function (err, docs) { 
