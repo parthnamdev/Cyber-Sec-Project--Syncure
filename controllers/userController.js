@@ -294,14 +294,14 @@ const updateUsername = (req, res) => {
                                             const mName = mediaName[1];
                                             element.path = new_username+'/'+mName;
                                             foundUser.save(errr => {
-                                                if(!errr) {
-                                                    console.log("changed paths successfully");
-                                                } else {
+                                                if(errr) {
                                                     res.json({
                                                         status: "failure",
                                                         message: "err in changing paths in schema/database",
                                                         errors: [errr]
                                                     })
+                                                } else {
+                                                    console.log("changed paths successfully");
                                                 }
                                             });
                                         });
