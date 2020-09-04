@@ -120,7 +120,7 @@ const addMedia = (req, res) => {
         
         Article.findOne( {username: req.body.username}, function(err, foundArticle) {
             if(!err && foundArticle) {
-                // try {
+                try {
                     const memoryUsedByUser = (foundArticle.memoryUsed) * 1024 * 1024;
                     const remaining = parseFloat(100*1024*1024) - parseFloat(memoryUsedByUser);
                     
@@ -217,15 +217,15 @@ const addMedia = (req, res) => {
                           //file removed
                         })
                     }
-                // }
-                // catch(err) {
-                //     res.json({
-                //         status: "failure",
-                //         message:"invalid file or no file. (Send 'username' attribute before 'media' if not done so. If already done, ignore.)",
-                //         errors: [err],
-                //         data: {}
-                //     });
-                //   }
+                }
+                catch(err) {
+                    res.json({
+                        status: "failure",
+                        message:"invalid file or no file. (Send 'username' attribute before 'media' if not done so. If already done, ignore.)",
+                        errors: [err],
+                        data: {}
+                    });
+                  }
             } else {
                 res.json({
                     status: "failure",
