@@ -14,6 +14,9 @@ router.get('/getMedia/:username/:media', authenticate, [
 router.get('/downloadMedia/:username/:media', authenticate, [
     param('username','username should be minimum of 6 characters').isLength({min: 6})
     ],articleController.downloadMedia);
+router.get('/downloadMediaUrl/:username/:media', authenticate, [
+    param('username','username should be minimum of 6 characters').isLength({min: 6})
+    ],articleController.downloadMediaUrl);
 router.get('/getMediaInfo', authenticate, [
     body('username','username should be minimum of 6 characters').isLength({min: 6})
     ], articleController.getMediaInfo);
@@ -51,5 +54,8 @@ router.post('/downloadMediaById', authenticate, [
     body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('id').notEmpty()
     ], articleController.downloadMediaById);
-
+router.post('/downloadMediaUrlById', authenticate, [
+    body('username','username should be minimum of 6 characters').isLength({min: 6}),
+    body('id').notEmpty()
+    ], articleController.downloadMediaUrlById);
 module.exports = router;

@@ -468,6 +468,35 @@ const downloadMediaById = (req, res) => {
     }
 }
 
+const downloadMediaUrlById = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
+    } else {
+        Article.findOne( {username: req.body.username}, function(err, foundUser) {
+            if(!err && foundUser) {
+                foundUser.media.forEach(element => {
+                    if(element._id == req.body.id){
+                        res.redirect('downloadMediaUrl/'+element.path);
+                    }
+                });
+            } else {
+                res.json({
+                    status: "failure",
+                    message: "no media/user found",
+                    errors: [err],
+                    data: {}
+                });
+            }
+        });
+    }
+}
+
 const getMedia = (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -528,6 +557,47 @@ const downloadMedia = (req, res) => {
             .then( response => {
                 // res.json(response);
                 res.redirect(response.data.href)
+            })
+            .catch(errr => {res.json({
+                status: "failure",
+                message: "disk api err",
+                errors: [errr],
+                data: {}
+            });});
+        } else {
+            res.json({
+                status: "failure",
+                message: "unauthorised user",
+                errors: [],
+                data: {}
+            })
+        }
+    }
+}
+
+const downloadMediaUrl = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
+    } else {
+        if(req.params.username) {
+            axios.get('https://cloud-api.yandex.net/v1/disk/resources/download', { params: { path: '/Syncure_data/'+req.params.username+'/'+req.params.media}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+            .then( response => {
+                // res.json(response);
+                // res.redirect(response.data.href)
+                res.json({
+                    status: "success",
+                    message: "url in data",
+                    errors: [],
+                    data: {
+                        url: response.data.href
+                    }
+                })
             })
             .catch(errr => {res.json({
                 status: "failure",
@@ -615,5 +685,5 @@ const getMediaInfoById = (req, res) => {
 }
 
 module.exports = {
-    find, addMedia, addPassword, removeMedia, removePassword, findAllPasswords, findPassword, getMediaById, getMedia, downloadMedia, downloadMediaById, getMediaInfo, getMediaInfoById
+    find, addMedia, addPassword, removeMedia, removePassword, findAllPasswords, findPassword, getMediaById, getMedia, downloadMedia, downloadMediaById, getMediaInfo, getMediaInfoById, downloadMediaUrl, downloadMediaUrlById
 }
