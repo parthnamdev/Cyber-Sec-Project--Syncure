@@ -125,7 +125,10 @@ const addMedia = (req, res) => {
                     const remaining = parseFloat(100*1024*1024) - parseFloat(memoryUsedByUser);
                     
                     if(req.file.size <= remaining) {
+                        console.log(req.file);
+                        console.log(req.file.path);
                         const old_media_path = req.file.path.split(/\\(.+)/,2);
+                        console.log(old_media_path);
                         const media_path = old_media_path[1].replace("\\","/");
                         // console.log(media_path);
                         const newMedia = {
