@@ -57,7 +57,7 @@ const login = (req, res, next) => {
                   });
                   if(check == 1) {
                     const token = jwt.sign(
-                      { username: req.body.username },
+                      { username: req.body.username, uuid: req.user.uuid },
                       process.env.JWT_SECRET,
                       { expiresIn: "15m" }
                     );
@@ -153,7 +153,7 @@ const twoStepVerification = (req, res) => {
   if (req.isAuthenticated() && isValid == true) {
     
     const token = jwt.sign(
-      { username: req.params.username },
+      { username: req.params.username, uuid: req.user.uuid },
       process.env.JWT_SECRET,
       { expiresIn: "15m" }
     );

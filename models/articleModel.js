@@ -6,12 +6,13 @@ const passwordSchema = new mongoose.Schema({
 });
 const mediaSchema = new mongoose.Schema({
     path: String,
+    name: String,
     size: String,
     description: String
 });
 
 const articleSchema = new mongoose.Schema({
-    username: String,
+    uuid: String,
     memoryUsed: String,
     passwords: [passwordSchema],
     media: [mediaSchema]

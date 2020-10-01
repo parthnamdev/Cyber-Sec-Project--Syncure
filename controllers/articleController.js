@@ -16,7 +16,7 @@ const axios = require('axios');
 // }
 
 const find = (req, res) => {
-    Article.findOne( {username: req.params.username}, function(err, foundArticle) {
+    Article.findOne( {uuid: req.user.uuid}, function(err, foundArticle) {
         if(!err) {
             res.json({
                 status: "success",
@@ -47,7 +47,7 @@ const findPassword = (req, res) => {
         data: {}
     });
     } else {
-        Article.findOne( {username: req.body.username}, function(err, foundUser) {
+        Article.findOne( {uuid: req.user.uuid}, function(err, foundUser) {
             if(!err && foundUser) {
                 foundUser.passwords.forEach(element => {
                     if(element._id == req.body.id){
@@ -84,7 +84,7 @@ const findAllPasswords = (req, res) => {
         data: {}
     });
     } else {
-        Article.findOne( {username: req.body.username}, function(err, foundUser) {
+        Article.findOne( {uuid: req.user.uuid}, function(err, foundUser) {
             if(!err && foundUser) {
                 res.json({
                     status: "success",
@@ -118,7 +118,7 @@ const addMedia = (req, res) => {
     });
     } else {
         
-        Article.findOne( {username: req.body.username}, function(err, foundArticle) {
+        Article.findOne( {uuid: req.user.uuid}, function(err, foundArticle) {
             if(!err && foundArticle) {
                 try {
                     const memoryUsedByUser = (foundArticle.memoryUsed) * 1024 * 1024;
@@ -127,16 +127,20 @@ const addMedia = (req, res) => {
                     if(req.file.size <= remaining) {
                         let old_media_path = req.file.path.split(/\\(.+)/,2);
                         let media_path;
+                        let media_name;
                         if(old_media_path.length == 1) {
                             old_media_path = req.file.path.split("/",3);
                             media_path = old_media_path[1]+"/"+old_media_path[2];
+                            media_name = old_media_path[2];
                         } else {
                             media_path = old_media_path[1].replace("\\","/");
+                            media_name = media_path.split("/",2)[1];
                         }
                         
                         // console.log(media_path);
                         const newMedia = {
                             path: media_path,
+                            name: media_name,
                             size: (parseFloat(req.file.size)/(1024*1024)).toFixed(2),
                             description: req.body.description
                         }
@@ -221,7 +225,7 @@ const addMedia = (req, res) => {
                 catch(err) {
                     res.json({
                         status: "failure",
-                        message:"invalid file or no file. (Send 'username' attribute before 'media' if not done so. If already done, ignore.)",
+                        message:"invalid file or no file. (Send 'username' attribute before 'media' if not done so. If already done or if username attr is not required, ignore.)",
                         errors: [err],
                         data: {}
                     });
@@ -251,7 +255,7 @@ const addPassword = (req, res) => {
         data: {}
     });
     } else {
-        Article.findOne( {username: req.body.username}, function(err, foundArticle) {
+        Article.findOne( {uuid: req.user.uuid}, function(err, foundArticle) {
             if(!err && foundArticle) {
                 const newPassword = {
                     title: req.body.passwordTitle,
@@ -306,7 +310,7 @@ const removeMedia = (req, res) => {
         data: {}
     });
     } else {
-        Article.findOne( {username: req.body.username}, function(err, foundArticle) {
+        Article.findOne( {uuid: req.user.uuid}, function(err, foundArticle) {
             if(!err && foundArticle) {
                 foundArticle.media.forEach(element => {
                     if(element._id == req.body.id){
@@ -371,7 +375,7 @@ const removePassword = (req, res) => {
         data: {}
     });
     } else {
-        Article.findOne( {username: req.body.username}, function(err, foundArticle) {
+        Article.findOne( {uuid: req.user.uuid}, function(err, foundArticle) {
             if(!err && foundArticle) {
                 foundArticle.passwords.forEach(element => {
                     if(element._id == req.body.id){
@@ -419,11 +423,11 @@ const getMediaById = (req, res) => {
         data: {}
     });
     } else {
-        Article.findOne( {username: req.body.username}, function(err, foundUser) {
+        Article.findOne( {uuid: req.user.uuid}, function(err, foundUser) {
             if(!err && foundUser) {
                 foundUser.media.forEach(element => {
                     if(element._id == req.body.id){
-                        res.redirect('getMedia/'+element.path);
+                        res.redirect('getMedia/'+element.name);
                     }
                 });
             } else {
@@ -453,7 +457,7 @@ const downloadMediaById = (req, res) => {
             if(!err && foundUser) {
                 foundUser.media.forEach(element => {
                     if(element._id == req.body.id){
-                        res.redirect('downloadMedia/'+element.path);
+                        res.redirect('downloadMedia/'+element.name);
                     }
                 });
             } else {
@@ -478,11 +482,11 @@ const downloadMediaUrlById = (req, res) => {
         data: {}
     });
     } else {
-        Article.findOne( {username: req.body.username}, function(err, foundUser) {
+        Article.findOne( {uuid: req.user.uuid}, function(err, foundUser) {
             if(!err && foundUser) {
                 foundUser.media.forEach(element => {
                     if(element._id == req.body.id){
-                        res.redirect('downloadMediaUrl/'+element.path);
+                        res.redirect('downloadMediaUrl/'+element.name);
                     }
                 });
             } else {
@@ -507,11 +511,11 @@ const getMedia = (req, res) => {
         data: {}
     });
     } else {
-        if(req.params.username) {
-            axios.put('https://cloud-api.yandex.net/v1/disk/resources/publish', null, { params: { path: '/Syncure_data/'+req.params.username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+        // if(req.params.username) {
+            axios.put('https://cloud-api.yandex.net/v1/disk/resources/publish', null, { params: { path: '/Syncure_data/'+req.user.uuid}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
             .then( response => {
                 // res.json(response);
-                axios.get('https://cloud-api.yandex.net/v1/disk/resources', { params: { path: '/Syncure_data/'+req.params.username, fields: 'name, public_url'}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+                axios.get('https://cloud-api.yandex.net/v1/disk/resources', { params: { path: '/Syncure_data/'+req.user.uuid, fields: 'name, public_url'}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
                 .then( result => {
                     //const url_array = result.data.public_url.split("?");
                     res.redirect(result.data.public_url+'/'+req.params.media);
@@ -531,14 +535,14 @@ const getMedia = (req, res) => {
                 errors: [errr],
                 data: {}
             });});
-        } else {
-            res.json({
-                status: "failure",
-                message: "unauthorised user",
-                errors: [],
-                data: {}
-            })
-        }
+        // } else {
+        //     res.json({
+        //         status: "failure",
+        //         message: "unauthorised user",
+        //         errors: [],
+        //         data: {}
+        //     })
+        // }
     }
 }
 
@@ -552,8 +556,8 @@ const downloadMedia = (req, res) => {
         data: {}
     });
     } else {
-        if(req.params.username) {
-            axios.get('https://cloud-api.yandex.net/v1/disk/resources/download', { params: { path: '/Syncure_data/'+req.params.username+'/'+req.params.media}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+        // if(req.params.username) {
+            axios.get('https://cloud-api.yandex.net/v1/disk/resources/download', { params: { path: '/Syncure_data/'+req.user.uuid+'/'+req.params.media}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
             .then( response => {
                 // res.json(response);
                 res.redirect(response.data.href)
@@ -564,14 +568,14 @@ const downloadMedia = (req, res) => {
                 errors: [errr],
                 data: {}
             });});
-        } else {
-            res.json({
-                status: "failure",
-                message: "unauthorised user",
-                errors: [],
-                data: {}
-            })
-        }
+        // } else {
+        //     res.json({
+        //         status: "failure",
+        //         message: "unauthorised user",
+        //         errors: [],
+        //         data: {}
+        //     })
+        // }
     }
 }
 
@@ -585,8 +589,8 @@ const downloadMediaUrl = (req, res) => {
         data: {}
     });
     } else {
-        if(req.params.username) {
-            axios.get('https://cloud-api.yandex.net/v1/disk/resources/download', { params: { path: '/Syncure_data/'+req.params.username+'/'+req.params.media}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+        // if(req.params.username) {
+            axios.get('https://cloud-api.yandex.net/v1/disk/resources/download', { params: { path: '/Syncure_data/'+req.user.uuid+'/'+req.params.media}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
             .then( response => {
                 // res.json(response);
                 // res.redirect(response.data.href)
@@ -605,14 +609,14 @@ const downloadMediaUrl = (req, res) => {
                 errors: [errr],
                 data: {}
             });});
-        } else {
-            res.json({
-                status: "failure",
-                message: "unauthorised user",
-                errors: [],
-                data: {}
-            })
-        }
+        // } else {
+        //     res.json({
+        //         status: "failure",
+        //         message: "unauthorised user",
+        //         errors: [],
+        //         data: {}
+        //     })
+        // }
     }
 }
 
@@ -626,7 +630,7 @@ const getMediaInfo = (req, res) => {
         data: {}
     });
     } else {
-        Article.findOne( {username: req.body.username}, function(err, foundUser) {
+        Article.findOne( {uuid: req.user.uuid}, function(err, foundUser) {
             if(!err && foundUser) {
                 res.json({
                     status: "success",
@@ -658,7 +662,7 @@ const getMediaInfoById = (req, res) => {
         data: {}
     });
     } else {
-        Article.findOne( {username: req.body.username}, function(err, foundUser) {
+        Article.findOne( {uuid: req.user.uuid}, function(err, foundUser) {
             if(!err && foundUser) {
                 foundUser.media.forEach(element => {
                     if(element._id == req.body.id){

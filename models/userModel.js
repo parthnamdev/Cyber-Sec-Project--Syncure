@@ -8,7 +8,8 @@ const userSchema = new mongoose.Schema({
     name: String,
     password: String,
     twoFA: Boolean ,
-    device: [String]
+    device: [String],
+    uuid: String
 });
 userSchema.plugin(passportLocalMongoose);
 const User = mongoose.model('user', userSchema);
