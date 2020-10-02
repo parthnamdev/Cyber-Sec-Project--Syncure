@@ -1,5 +1,6 @@
 const User = require('../models/userModel');
 const Article = require('../models/articleModel');
+const Status = require('../models/updateStatusModel');
 const fs = require('fs');
 const { body, validationResult } = require('express-validator');
 const axios = require('axios');
@@ -8,18 +9,19 @@ const nodemailer = require("nodemailer");
 const { totp } = require('otplib');
 const { v4: uuidv4 } = require('uuid');
 const validator = require('validator');
+const { uid } = require('rand-token');
 totp.options = { 
     digits: 8,
-    step: 120
+    step: 150
    };
 const opts = totp.options;
 const secret = process.env.TOTP_SECRET;
 var newUserRegister = {};
 var NewEmail = {};
 var resetUser = {};
-var emailStatus = {};
+// var emailStatus = {};
 var accesser = false;
-var mailUpdateAccesser = false;
+// var mailUpdateAccesser = false;
 // const toptToken = totp.generate(secret);
 
 
@@ -107,7 +109,7 @@ const mail = async (req, res) => {
           });
         
           const toptToken = totp.generate(secret);
-          const textMsg = `${"Your One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for 2 mins only"}`;
+          const textMsg = `${"Your One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for next " + totp.timeRemaining() + " seconds.\n\nThis OTP is based on time for security purposes. Kindly resend request if expiration time is very less."}`;
           const toUser = newUserRegister.email;
         
           const mailOptions = {
@@ -248,205 +250,6 @@ const twoFactorAuth = (req, res) => {
 }
 }
 
-// const updateUsername = (req, res) => {
-//     User.findOne( {username: req.body.newUsername}, function(err, foundUser) {
-//         if(err) {
-//             res.json({
-//                 status: "failure",
-//                 message: "",
-//                 errors: [err],
-//                 data: {}
-//             });
-//         } else {
-//             if(foundUser) {
-//                 res.json({
-//                     status: "failure",
-//                     message: "username already exist !",
-//                     errors: [],
-//                     data: {}
-//                 });
-//             } else {
-//                 const errors = validationResult(req);
-//                 if (!errors.isEmpty()) {
-//                   return res.status(400).json({
-//                     status: "failure",
-//                     message: "validation error",
-//                     errors: errors.array(),
-//                     data: {}
-//                 });
-//                 } else {
-//                     const curr_username = req.user.username;
-//                     const new_username = req.body.newUsername;
-//                     User.updateOne({username: req.user.username},  
-//                         {username: req.body.newUsername}, function (err, docs) { 
-//                         if (err){ 
-//                             res.json({
-//                                 status: "failure",
-//                                 message: "err in updating username",
-//                                 errors: [err],
-//                                 data: {}
-//                             })
-//                         } 
-//                         else{
-//                             axios.post('https://cloud-api.yandex.net/v1/disk/resources/move', null,{ params: { from: '/Syncure_data/'+curr_username, path: '/Syncure_data/'+new_username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
-//                             .then( response => {
-//                                 console.log("succeccfully renamed cloud directory");
-                                
-//                                   Article.findOne( {username: curr_username}, function(err, foundUser) {
-//                                     if(!err && foundUser) {
-//                                         foundUser.media.forEach(element => {
-//                                             const mediaName = element.path.split('/',2)
-//                                             const mName = mediaName[1];
-//                                             element.path = new_username+'/'+mName;
-//                                         });
-//                                         foundUser.save(function(errr) {
-//                                             if(errr) {
-//                                                 res.json({
-//                                                     status: "failure",
-//                                                     message: "err in changing paths in schema/database",
-//                                                     errors: [errr]
-//                                                 })
-//                                             } else {
-//                                                 console.log("changed paths successfully");
-//                                             }
-//                                         });
-//                                         Article.updateOne({username: curr_username},  
-//                                             {username: new_username}, function (err, docs) { 
-//                                             if (err){ 
-//                                                 res.json({
-//                                                     status: "failure",
-//                                                     message: "err in updating username in articles and local folder",
-//                                                     errors: [err],
-//                                                     data: {}
-//                                                 })
-//                                             } 
-//                                             else{
-//                                                 const currPath = `${"./uploads/" + curr_username}`;
-//                                                 const newPath = `${"./uploads/" + new_username}`;
-//                                                 fs.rename(currPath, newPath, function(erro) {
-//                                                     if (!erro) {
-//                                                       console.log("successfully renamed local directory");
-//                                                       res.json({
-//                                                             status: "success",
-//                                                             message: "Updated username successfully",
-//                                                             errors: [],
-//                                                             data: {
-//                                                                 docs: docs
-//                                                             }
-//                                                         });
-//                                                     } else {
-//                                                         res.json({
-//                                                                 status: "failure",
-//                                                                 message: "err in renaming local directory",
-//                                                                 errors: [erro],
-//                                                                 data: {}
-//                                                             });
-//                                                     }
-//                                                   })
-//                                             } 
-//                                         });
-//                                     } else {
-//                                         res.json({
-//                                             status: "failure",
-//                                             message: "err changing local directory name",
-//                                             errors: [err],
-//                                             data: {}
-//                                         });
-//                                     }
-//                                 });
-                                 
-//                             })
-//                             .catch(errr => {
-//                                 res.json({
-//                                     status: "failure",
-//                                     message: "disk api err",
-//                                     errors: [errr],
-//                                     data: {}
-//                                 });
-//                             });
-//                         } 
-//                     });
-//                 }
-//             }
-//         }
-//     });
-// }
-
-// const updateEmail = (req, res) => {
-//     const errors = validationResult(req);
-//     if (!errors.isEmpty()) {
-//       return res.status(400).json({
-//         status: "failure",
-//         message: "validation error",
-//         errors: errors.array(),
-//         data: {}
-//     });
-//     } else {
-//         NewEmail = {
-//             mail: req.body.newEmail,
-//             username: req.user.username
-//         }
-//         mailUpdateAccesser = true;
-//         res.redirect("mailForEmailUpdate");
-//     }
-// }
-
-const mailForEmailUpdate = async (req, res) => {
-    if(mailUpdateAccesser === true){
-        mailUpdateAccesser = false;
-        const transporter = nodemailer.createTransport({
-            service: "SendGrid",
-            auth: {
-              user: process.env.MAIL_USERNAME,
-              pass: process.env.MAIL_PASS,
-            },
-          });
-        
-          const toptToken = totp.generate(secret);
-          const textMsg = `${"We have received request to update email for your account. Don't share this OTP with anyone.\n\nYour One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for 2 mins only"}`;
-          const toUserForEmail = NewEmail.mail;
-        
-          const mailOptions = {
-            from: {
-                    name: 'Syncure app',
-                    address: process.env.MAIL_USER
-                  },
-            to: toUserForEmail,
-            subject: "OTP - Authentication - Syncure app",
-            text: textMsg,
-          };
-        
-          const info = await transporter.sendMail(mailOptions).catch((err) => {
-            // console.log(err);
-            emailStatus = {
-                status: "failure",
-                message: "error sending mail",
-                errors: [err],
-                data: {}
-            };
-          });
-          console.log(`Mail sent to : ${info.messageId}`);
-          return emailStatus = {
-            status: "success",
-            message: "Mail Sent",
-            errors: [],
-            data: {
-              response: info.response,
-              timeRemaining: totp.timeRemaining()
-            }
-            
-        };
-    } else {
-        emailStatus = {
-            status: "failure",
-            message: "unauthorised, you don't have direct access to this route",
-            errors: [],
-            data: {}
-        };
-    }
-    
-  };
-
 const emailtwoFactorAuth = (req, res) => {
     const isValid = totp.check(req.body.totp, secret);
     const errors = validationResult(req);
@@ -503,57 +306,6 @@ const emailtwoFactorAuth = (req, res) => {
 }
 }
 
-// const updatePassword = (req, res) => {
-//     const errors = validationResult(req);
-//     if (!errors.isEmpty()) {
-//       return res.status(400).json({
-//         status: "failure",
-//         message: "validation error",
-//         errors: errors.array(),
-//         data: {}
-//     });
-//     } else {
-//         User.findOne({username: req.body.username}, function (err, found) { 
-//             if (!err){
-//                 if(req.body.password === req.body.newPassword) {
-//                     res.json({
-//                         status: "failure",
-//                         message: "new password can't be same as old",
-//                         errors: [err],
-//                         data: {}
-//                     })
-//                 } else {
-//                     found.changePassword(req.body.password, req.body.newPassword, (err) => {
-//                         if(!err) {
-//                             res.json({
-//                                 status: "success",
-//                                 message: "Updated password successfully",
-//                                 errors: [],
-//                                 data: {}
-//                             });
-//                         } else {
-//                             res.json({
-//                                 status: "failure",
-//                                 message: "err in updating password",
-//                                 errors: [err],
-//                                 data: {}
-//                             })
-//                         }
-//                     }); 
-//                 }
-                
-//              } else{ 
-//                 res.json({
-//                     status: "failure",
-//                     message: "err in updating password or finding the user to update the password",
-//                     errors: [err],
-//                     data: {}
-//                 })
-//             } 
-//         }); 
-//     }
-    
-// }
  
 const forgotPassword = (req, res) => {
     const errors = validationResult(req);
@@ -580,7 +332,7 @@ const forgotPassword = (req, res) => {
                       });
                     
                       const toptToken = totp.generate(secret);
-                      const textMsg = `${"We have received request to reset password for your account. Don't share this OTP with anyone.\n\nYour One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for 2 mins only"}`;
+                      const textMsg = `${"We have received request to reset password for your account. Don't share this OTP with anyone.\n\nYour One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for next " + totp.timeRemaining() + " seconds.\n\nThis OTP is based on time for security purposes. Kindly resend request if expiration time is very less."}`;
                       const toUserForReset = resetUser.email;
                       
                       const mailOptions = {
@@ -694,52 +446,37 @@ const reset = (req, res) => {
 }
 }
 
-// const updateName = (req, res) => {
-//     const errors = validationResult(req);
-//     if (!errors.isEmpty()) {
-//       return res.status(400).json({
-//         status: "failure",
-//         message: "validation error",
-//         errors: errors.array(),
-//         data: {}
-//     });
-//     } else {
-//         User.updateOne({username: req.body.username},  
-//             {name: req.body.newName}, function (err, docs) { 
-//             if (err){ 
-//                 res.json({
-//                     status: "failure",
-//                     message: "err in updating name",
-//                     errors: [err],
-//                     data: {}
-//                 })
-//             } 
-//             else{
-//                 if(docs.n !== 0){
-//                     res.json({
-//                         status: "success",
-//                         message: "Updated name successfully",
-//                         errors: [],
-//                         data: {
-//                             docs: docs 
-//                         }
-//                     });
-//                 } else {
-//                     res.json({
-//                         status: "failure",
-//                         message: "user not found or update fail",
-//                         errors: [],
-//                         data: {
-//                             docs: docs
-//                         }
-//                     });
-//                 } 
-                 
-//             } 
-//         });
-//     }
-// } 
-
+const getError = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "failure",
+        message: "validation error",
+        errors: errors.array(),
+        data: {}
+    });
+    } else {
+        Status.find({id: req.body.id}, function(err, found) {
+            if(!err && found) {
+                res.json({
+                    status: "success",
+                    message: "",
+                    errors: [],
+                    data: {
+                        status_details: found
+                    }
+                });
+            } else {
+                res.json({
+                    status: "failure",
+                    message: "err or no status found",
+                    errors: [],
+                    data: {}
+                });
+            }
+        })
+    } 
+}
 const updateUser = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -750,252 +487,385 @@ const updateUser = async (req, res) => {
         data: {}
     });
     } else {
-        let nameStatus = { status: "no change", data: {}, errors: [], message: ""};
-        let usernameStatus = { status: "no change", data: {}, errors: [], message: ""};
-        let passwordStatus = { status: "no change", data: {}, errors: [], message: ""};
-        emailStatus = { status: "no change", data: {}, errors: [], message: ""};
-
-        if(req.body.newName) {
+        const req_id = req.user.uuid + "-" + uid(16);
+        if(await req.body.newName) {
             await User.updateOne({uuid: req.user.uuid},  
                 {name: req.body.newName}, function (err, docs) { 
                 if (err){
-                    nameStatus = {
+                    console.log({
                         status: "failure",
                         message: "err in updating name",
                         errors: [err],
                         data: {}
-                    };;
+                    });
+                    const newStatus = new Status({
+                        id: req_id,
+                        type: "name",
+                        status: {
+                            status: "failure",
+                            message: "err in updating name",
+                            errors: [err],
+                            data: {}
+                        }
+                    });
+                    newStatus.save((errr) => {
+                        if(errr) {
+                            console.log(errr);
+                        }
+                    });
                 } 
                 else{
                     if(docs.n !== 0){
-                        console.log("name updated successfully");
-                        nameStatus = {
+                        // console.log("name updated successfully");
+                        console.log({
                             status: "success",
                             message: "Updated name successfully",
                             errors: [],
                             data: {
                                 docs: docs 
                             }
-                        };
+                        });
                     } else {
-                        nameStatus = {
+                        console.log({
                             status: "failure",
                             message: "user not found or update fail",
                             errors: [],
                             data: {
                                 docs: docs
                             }
-                        };
+                        });
+                        const newStatus = new Status({
+                            id: req_id,
+                            type: "name",
+                            status: {
+                                status: "failure",
+                                message: "user not found or update fail",
+                                errors: [],
+                                data: {
+                                    docs: docs
+                                }
+                            }
+                        });
+                        newStatus.save((errr) => {
+                            if(errr) {
+                                console.log(errr);
+                            }
+                        });
                     } 
                      
                 } 
             });
         }
-        if(req.body.newUsername) {
+        if(await req.body.newUsername) {
             if(validator.isLength(req.body.newUsername, {min:6})) {
 
             await User.findOne( {username: req.body.newUsername}, async function(err, foundUser) {
                 if(err) {
-                    usernameStatus = {
+                    console.log({
                         status: "failure",
                         message: "",
                         errors: [err],
                         data: {}
-                    };
+                    });
+                    const newStatus = new Status({
+                        id: req_id,
+                        type: "username",
+                        status: {
+                            status: "failure",
+                            message: "",
+                            errors: [err],
+                            data: {}
+                        }
+                    });
+                    newStatus.save((errr) => {
+                        if(errr) {
+                            console.log(errr);
+                        }
+                    });
                 } else {
                     if(foundUser) {
-                        usernameStatus = {
+                        console.log({
                             status: "failure",
                             message: "username already exist !",
                             errors: [],
                             data: {}
-                        };
+                        });
+                        const newStatus = new Status({
+                            id: req_id,
+                            type: "username",
+                            status: {
+                                status: "failure",
+                                message: "username already exist !",
+                                errors: [],
+                                data: {}
+                            }
+                        });
+                        newStatus.save((errr) => {
+                            if(errr) {
+                                console.log(errr);
+                            }
+                        });
                     } else {
-                        // const errors = validationResult(req);
-                        // if (!errors.isEmpty()) {
-                        //   return res.status(400).json({
-                        //     status: "failure",
-                        //     message: "validation error",
-                        //     errors: errors.array(),
-                        //     data: {}
-                        // });
-                        // } else {
-                            // const curr_username = req.user.username;
-                            // const new_username = req.body.newUsername;
                             await User.updateOne({uuid: req.user.uuid},  
                                 {username: req.body.newUsername}, function (err, docs) { 
                                 if (err){ 
-                                    usernameStatus = {
+                                    console.log({
                                         status: "failure",
                                         message: "err in updating username",
                                         errors: [err],
                                         data: {}
-                                    };
+                                    });
+                                    const newStatus = new Status({
+                                        id: req_id,
+                                        type: "username",
+                                        status: {
+                                            status: "failure",
+                                            message: "err in updating username",
+                                            errors: [err],
+                                            data: {}
+                                        }
+                                    });
+                                    newStatus.save((errr) => {
+                                        if(errr) {
+                                            console.log(errr);
+                                        }
+                                    });
                                 } 
                                 else{
-                                    // axios.post('https://cloud-api.yandex.net/v1/disk/resources/move', null,{ params: { from: '/Syncure_data/'+curr_username, path: '/Syncure_data/'+new_username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
-                                    // .then( response => {
-                                    //     console.log("succeccfully renamed cloud directory");
-                                        
-                                    //       Article.findOne( {username: curr_username}, function(err, foundUser) {
-                                    //         if(!err && foundUser) {
-                                    //             foundUser.media.forEach(element => {
-                                    //                 const mediaName = element.path.split('/',2)
-                                    //                 const mName = mediaName[1];
-                                    //                 element.path = new_username+'/'+mName;
-                                    //             });
-                                    //             foundUser.save(function(errr) {
-                                    //                 if(errr) {
-                                    //                     res.json({
-                                    //                         status: "failure",
-                                    //                         message: "err in changing paths in schema/database",
-                                    //                         errors: [errr]
-                                    //                     })
-                                    //                 } else {
-                                    //                     console.log("changed paths successfully");
-                                    //                 }
-                                    //             });
-                                    //             Article.updateOne({username: curr_username},  
-                                    //                 {username: new_username}, function (err, docs) { 
-                                    //                 if (err){ 
-                                    //                     res.json({
-                                    //                         status: "failure",
-                                    //                         message: "err in updating username in articles and local folder",
-                                    //                         errors: [err],
-                                    //                         data: {}
-                                    //                     })
-                                    //                 } 
-                                    //                 else{
-                                    //                     const currPath = `${"./uploads/" + curr_username}`;
-                                    //                     const newPath = `${"./uploads/" + new_username}`;
-                                    //                     fs.rename(currPath, newPath, function(erro) {
-                                    //                         if (!erro) {
-                                    //                           console.log("successfully renamed local directory");
-                                    //                           res.json({
-                                    //                                 status: "success",
-                                    //                                 message: "Updated username successfully",
-                                    //                                 errors: [],
-                                    //                                 data: {
-                                    //                                     docs: docs
-                                    //                                 }
-                                    //                             });
-                                    //                         } else {
-                                    //                             res.json({
-                                    //                                     status: "failure",
-                                    //                                     message: "err in renaming local directory",
-                                    //                                     errors: [erro],
-                                    //                                     data: {}
-                                    //                                 });
-                                    //                         }
-                                    //                       })
-                                    //                 } 
-                                    //             });
-                                    //         } else {
-                                    //             res.json({
-                                    //                 status: "failure",
-                                    //                 message: "err changing local directory name",
-                                    //                 errors: [err],
-                                    //                 data: {}
-                                    //             });
-                                    //         }
-                                    //     });
-                                         
-                                    // })
-                                    // .catch(errr => {
-                                    //     res.json({
-                                    //         status: "failure",
-                                    //         message: "disk api err",
-                                    //         errors: [errr],
-                                    //         data: {}
-                                    //     });
-                                    // });
-                                    usernameStatus = {
+                                    console.log({
                                         status: "success",
                                         message: "Updated username successfully",
                                         errors: [],
                                         data: {
                                             docs: docs
                                         }
-                                    };
+                                    });
                                 } 
                             });
-                        // }
                     }
                 }
             });
         } else {
-            usernameStatus = {
+            console.log({
                 status: "failure",
                 message: "validation error - username should be minimum of 6 characters",
                 errors: [],
                 data: {}
-            };
+            });
+            const newStatus = new Status({
+                id: req_id,
+                type: "username",
+                status: {
+                    status: "failure",
+                    message: "validation error - username should be minimum of 6 characters",
+                    errors: [],
+                    data: {}
+                }
+            });
+            newStatus.save((errr) => {
+                if(errr) {
+                    console.log(errr);
+                }
+            });
         }
+        
         }
-        if(req.body.newPassword && req.body.password) {
+        if(await req.body.newPassword && req.body.password) {
             if(validator.isLength(req.body.newPassword, {min: 6}) && validator.isLength(req.body.password, {min:6})) {
                 await User.findOne({uuid: req.user.uuid}, async function (err, found) { 
                     if (!err){
                         if(req.body.password === req.body.newPassword) {
-                            passwordStatus = {
+                            console.log({
                                 status: "failure",
                                 message: "new password can't be same as old",
                                 errors: [],
                                 data: {}
-                            };
+                            });
+                            const newStatus = new Status({
+                                id: req_id,
+                                type: "password",
+                                status: {
+                                    status: "failure",
+                                    message: "new password can't be same as old",
+                                    errors: [],
+                                    data: {}
+                                }
+                            });
+                            newStatus.save((errr) => {
+                                if(errr) {
+                                    console.log(errr);
+                                }
+                            });
                         } else {
                             await found.changePassword(req.body.password, req.body.newPassword, (err) => {
                                 if(!err) {
-                                    passwordStatus = {
+                                    console.log({
                                         status: "success",
                                         message: "Updated password successfully",
                                         errors: [],
                                         data: {}
-                                    };
+                                    });
                                 } else {
-                                    passwordStatus = {
+                                    console.log({
                                         status: "failure",
                                         message: "err in updating password",
                                         errors: [err],
                                         data: {}
-                                    };
+                                    });
+                                    const newStatus = new Status({
+                                        id: req_id,
+                                        type: "password",
+                                        status: {
+                                            status: "failure",
+                                            message: "err in updating password",
+                                            errors: [err],
+                                            data: {}
+                                        }
+                                    });
+                                    newStatus.save((errr) => {
+                                        if(errr) {
+                                            console.log(errr);
+                                        }
+                                    });
                                 }
                             }); 
                         }
                         
                      } else{ 
-                        passwordStatus = {
+                        console.log({
                             status: "failure",
                             message: "err in updating password or finding the user to update the password",
                             errors: [err],
                             data: {}
-                        };
+                        });
+                        const newStatus = new Status({
+                            id: req_id,
+                            type: "password",
+                            status: {
+                                status: "failure",
+                                message: "err in updating password or finding the user to update the password",
+                                errors: [err],
+                                data: {}
+                            }
+                        });
+                        newStatus.save((errr) => {
+                            if(errr) {
+                                console.log(errr);
+                            }
+                        });
                     } 
                 });
             } else {
-                passwordStatus = {
+                console.log({
                     status: "failure",
                     message: "validation error - password should be minimum of 6 characters",
                     errors: [],
                     data: {}
-                };
+                });
+                const newStatus = new Status({
+                    id: req_id,
+                    type: "password",
+                    status: {
+                        status: "failure",
+                        message: "validation error - password should be minimum of 6 characters",
+                        errors: [],
+                        data: {}
+                    }
+                });
+                newStatus.save((errr) => {
+                    if(errr) {
+                        console.log(errr);
+                    }
+                });
             }
         }
-        if(req.body.newEmail) {
+        if(await req.body.newEmail) {
             if(validator.isEmail(req.body.newEmail)) {
                 NewEmail = {
                     mail: req.body.newEmail,
                     username: req.user.username
                 }
-                mailUpdateAccesser = true;
-                await res.redirect("mailForEmailUpdate");
+                
+                const transporter = nodemailer.createTransport({
+                    service: "SendGrid",
+                    auth: {
+                      user: process.env.MAIL_USERNAME,
+                      pass: process.env.MAIL_PASS,
+                    },
+                  });
+                
+                  const toptToken = totp.generate(secret);
+                  const textMsg = `${"We have received request to update email for your account. Don't share this OTP with anyone.\n\nYour One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for next " + totp.timeRemaining() + " seconds.\n\nThis OTP is based on time for security purposes. Kindly resend request if expiration time is very less."}`;
+                  const toUserForEmail = NewEmail.mail;
+                
+                  const mailOptions = {
+                    from: {
+                            name: 'Syncure app',
+                            address: process.env.MAIL_USER
+                          },
+                    to: toUserForEmail,
+                    subject: "OTP - Authentication - Syncure app",
+                    text: textMsg,
+                  };
+                
+                  const info = await transporter.sendMail(mailOptions).catch((err) => {
+                    // console.log(err);
+                    console.log({
+                        status: "failure",
+                        message: "error sending mail",
+                        errors: [err],
+                        data: {}
+                    });
+                    const newStatus = new Status({
+                        id: req_id,
+                        type: "email",
+                        status: {
+                            status: "failure",
+                            message: "error sending mail",
+                            errors: [err],
+                            data: {}
+                        }
+                    });
+                    newStatus.save((errr) => {
+                        if(errr) {
+                            console.log(errr);
+                        }
+                    });
+                  });
+                  console.log(`Mail sent to : ${info.messageId}`);
+                  console.log({
+                    status: "success",
+                    message: "Mail Sent",
+                    errors: [],
+                    data: {
+                      response: info.response,
+                      timeRemaining: totp.timeRemaining()
+                    }
+                    
+                });
+
             } else {
-                emailStatus = {
+                console.log({
                     status: "failure",
                     message: "validation error - invalid email",
                     errors: [],
                     data: {}
-                };
+                });
+                const newStatus = new Status({
+                    id: req_id,
+                    type: "email",
+                    status: {
+                        status: "failure",
+                        message: "validation error - invalid email",
+                        errors: [],
+                        data: {}
+                    }
+                });
+                newStatus.save((errr) => {
+                    if(errr) {
+                        console.log(errr);
+                    }
+                });
             }
         }
         res.json({
@@ -1003,10 +873,7 @@ const updateUser = async (req, res) => {
             message: "requested successfully",
             errors: [],
             data: {
-                nameStatus: nameStatus,
-                usernameStatus: usernameStatus,
-                passwordStatus: passwordStatus,
-                emailStatus: emailStatus
+                req_id: req_id
             }
         });
     }
@@ -1023,7 +890,7 @@ const remove = (req, res) => {
     });
     } else {
         const uuidUserToBeDeleted = req.user.uuid;
-        User.deleteOne( {username: req.body.username}, function(err) {
+        User.deleteOne( {uuid: uuidUserToBeDeleted}, function(err) {
             if(!err) {
                 axios.delete('https://cloud-api.yandex.net/v1/disk/resources', { params: { path: '/Syncure_data/'+uuidUserToBeDeleted}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
                 .then( response => {
@@ -1109,5 +976,5 @@ const storage = (req, res) => {
 }
 
 module.exports = {
-    find, register, /*updateUsername, updatePassword,*/ remove, storage, updateUser, /*updateEmail, updateName,*/ mail, twoFactorAuth, mailForEmailUpdate, emailtwoFactorAuth, forgotPassword, reset
+    find, register, getError, remove, storage, updateUser, mail, twoFactorAuth, emailtwoFactorAuth, forgotPassword, reset
 }

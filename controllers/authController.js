@@ -8,7 +8,7 @@ const { totp } = require('otplib');
 const uid = require('rand-token').uid;
 totp.options = { 
     digits: 8,
-    step: 120
+    step: 150
    };
 const opts = totp.options;
 const secret = process.env.TOTP_SECRET;
@@ -113,7 +113,7 @@ const mail = async (req, res) => {
   });
 
   const toptToken = totp.generate(secret);
-  const textMsg = `${"Your One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for 2 mins only"}`;
+  const textMsg = `${"Your One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for next " + totp.timeRemaining() + " seconds.\n\nThis OTP is based on time for security purposes. Kindly resend request if expiration time is very less."}`;
   const toUser = req.user.email;
 
   const mailOptions = {
