@@ -1,16 +1,22 @@
 const isLogged = (req, res, next) => {
     try {
+        console.log(req.isAuthenticated());
         if(req.isAuthenticated()){
             next()
         } else {
             res.json({
-                message: "unauthorised"
+                status: "failure",
+                message: "unauthorised",
+                errors: [],
+                data: {}
             })
         }
     } catch(err) {
         res.json({
+            status: "failure",
             message: "authentication failed",
-            error: err
+            errors: [err],
+            data: {}
         });
     }
 }
