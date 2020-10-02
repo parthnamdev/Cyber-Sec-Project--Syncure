@@ -22,6 +22,7 @@ const authRouter = require('./routes/authRoutes');
 const adminRouter = require('./routes/adminRoutes');
 
 app.use(bodyParser.urlencoded({extended:true}));
+app.use(bodyParser.json());
 
 // app.use( mediaAccess, express.static(__dirname + "/uploads"));
 app.use(expressSession({secret: process.env.SESSION_SECRET, saveUninitialized: false, resave: false}));
