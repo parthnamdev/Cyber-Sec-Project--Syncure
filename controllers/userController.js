@@ -109,7 +109,7 @@ const mail = async (req, res) => {
           });
         
           const toptToken = totp.generate(secret);
-          const textMsg = `${"Your One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for next " + totp.timeRemaining() + " seconds.\n\nThis OTP is based on time for security purposes. Kindly resend request if expiration time is very less."}`;
+          const textMsg = `${"Your One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for next " + totp.timeRemaining() + " seconds.\n\nThis OTP is based on time for security purposes.\nKindly resend request if expiration time is very less."}`;
           const toUser = newUserRegister.email;
         
           const mailOptions = {
@@ -332,7 +332,7 @@ const forgotPassword = (req, res) => {
                       });
                     
                       const toptToken = totp.generate(secret);
-                      const textMsg = `${"We have received request to reset password for your account. Don't share this OTP with anyone.\n\nYour One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for next " + totp.timeRemaining() + " seconds.\n\nThis OTP is based on time for security purposes. Kindly resend request if expiration time is very less."}`;
+                      const textMsg = `${"We have received request to reset password for your account. Don't share this OTP with anyone.\n\nYour One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for next " + totp.timeRemaining() + " seconds.\n\nThis OTP is based on time for security purposes.\nKindly resend request if expiration time is very less."}`;
                       const toUserForReset = resetUser.email;
                       
                       const mailOptions = {
@@ -795,7 +795,7 @@ const updateUser = async (req, res) => {
                   });
                 
                   const toptToken = totp.generate(secret);
-                  const textMsg = `${"We have received request to update email for your account. Don't share this OTP with anyone.\n\nYour One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for next " + totp.timeRemaining() + " seconds.\n\nThis OTP is based on time for security purposes. Kindly resend request if expiration time is very less."}`;
+                  const textMsg = `${"We have received request to update email for your account. Don't share this OTP with anyone.\n\nYour One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for next " + totp.timeRemaining() + " seconds.\n\nThis OTP is based on time for security purposes.\nKindly resend request if expiration time is very less."}`;
                   const toUserForEmail = NewEmail.mail;
                 
                   const mailOptions = {
