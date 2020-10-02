@@ -38,7 +38,7 @@ db.on("error", (err) => {
 db.once("open", () => {
     User.find({},(err,found) => {
         found.forEach(element => {
-            const create_folder = `${"./uploads/" + element.username}`;
+            const create_folder = `${"./uploads/" + element.uuid}`;
             fs.mkdir(create_folder, {recursive: true}, function(err) {
                 if(err) throw err;
             });

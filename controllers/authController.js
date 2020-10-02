@@ -8,7 +8,7 @@ const { totp } = require('otplib');
 const uid = require('rand-token').uid;
 totp.options = { 
     digits: 8,
-    step: 120
+    step: 150
    };
 const opts = totp.options;
 const secret = process.env.TOTP_SECRET;
@@ -57,7 +57,7 @@ const login = (req, res, next) => {
                   });
                   if(check == 1) {
                     const token = jwt.sign(
-                      { username: req.body.username },
+                      { username: req.body.username, uuid: req.user.uuid },
                       process.env.JWT_SECRET,
                       { expiresIn: "15m" }
                     );
@@ -113,7 +113,7 @@ const mail = async (req, res) => {
   });
 
   const toptToken = totp.generate(secret);
-  const textMsg = `${"Your One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for 2 mins only"}`;
+  const textMsg = `${"Your One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for next " + totp.timeRemaining() + " seconds.\n\nThis OTP is based on time for security purposes. Kindly resend request if expiration time is very less."}`;
   const toUser = req.user.email;
 
   const mailOptions = {
@@ -153,7 +153,7 @@ const twoStepVerification = (req, res) => {
   if (req.isAuthenticated() && isValid == true) {
     
     const token = jwt.sign(
-      { username: req.params.username },
+      { username: req.params.username, uuid: req.user.uuid },
       process.env.JWT_SECRET,
       { expiresIn: "15m" }
     );

@@ -26,7 +26,7 @@ var upload = (req, res, next) => {
                 //     //console.log("only png and jpg");
                 //     return callback(null, false)
                 // }
-                Article.findOne( {username: req.body.username},function(err, foundArticle){
+                Article.findOne( {uuid: req.user.uuid},function(err, foundArticle){
                     if(!err){
                         if(foundArticle && file){
                             return callback(null, true)
