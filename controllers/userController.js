@@ -261,8 +261,8 @@ const emailtwoFactorAuth = (req, res) => {
         data: {}
     });
     } else {
-    if(isValid === true && req.user.username === NewEmail.username) {
-        User.updateOne({username: NewEmail.username},  
+    if(isValid === true && req.user.uuid === NewEmail.uuid) {
+        User.updateOne({uuid: NewEmail.uuid},  
             {email: NewEmail.mail}, function (err, docs) { 
             if (err){ 
                 res.json({
@@ -783,7 +783,7 @@ const updateUser = async (req, res) => {
             if(validator.isEmail(req.body.newEmail)) {
                 NewEmail = {
                     mail: req.body.newEmail,
-                    username: req.user.username
+                    uuid: req.user.uuid
                 }
                 
                 const transporter = nodemailer.createTransport({
