@@ -9,7 +9,17 @@ const helmet = require('helmet');
 const expressSession = require('express-session');
 const { body, validationResult } = require('express-validator');
 const app = express();
+// const corsOptions = {
+//     header: {
+//         "Access-Control-Allow-Origin":"*"
+//     }
+// }
 app.use(cors());
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*"); // update to match the domain you will make the request from
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+  });
 app.use(helmet());
 const jwt = require("jsonwebtoken");
 const User =  require('./models/userModel');
