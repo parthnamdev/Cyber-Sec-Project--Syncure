@@ -11,7 +11,10 @@ const authenticate = (req, res, next) => {
             next()
         } else {
             res.json({
-                message: "unauthorised"
+                status: "failure",
+                message: "unauthorised",
+                errors: [],
+                data: {}
             })
         }
         
@@ -19,7 +22,9 @@ const authenticate = (req, res, next) => {
     } catch(err) {
         res.json({
             message: "authentication failed",
-            error: err
+            errors: [err],
+            status: "failure",
+            data: {}
         });
     }
 }
