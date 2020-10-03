@@ -169,11 +169,6 @@ const mail = async (req, res) => {
 const twoStepVerification = (req, res) => {
   req.user = myCache.get(req.params.username);
   const isValid = totp.check(req.body.totp, secret);
-  console.log(req.isAuthenticated());
-  console.log(req.body.totp);
-  console.log(req);
-  console.log(req.body);
-  console.log(isValid);
   if (req.isAuthenticated() && isValid == true) {
     myCache.take(req.params.username);
     const token = jwt.sign(
