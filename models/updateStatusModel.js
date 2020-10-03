@@ -8,6 +8,11 @@ const updateStatusSchema = new mongoose.Schema({
         message: String,
         errors: [Object],
         data: Object
+    },
+    createdAt: {
+        type: Date,
+        expires: '1d',
+        default: Date.now
     }
 });
 

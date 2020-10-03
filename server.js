@@ -34,7 +34,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 const uri = `${"mongodb+srv://"+process.env.ATLAS_USER+":"+process.env.ATLAS_PASSWORD+"@"+process.env.ATLAS_CLUSTER+".dcdll.mongodb.net/"+process.env.ATLAS_DB_NAME+"?retryWrites=true&w=majority"}`;
-mongoose.connect(uri, { useNewUrlParser:true, useUnifiedTopology:true });
+mongoose.connect(uri, { useNewUrlParser:true, useUnifiedTopology:true, useCreateIndex: true });
 const db = mongoose.connection;
 
 db.on("error", (err) => {
