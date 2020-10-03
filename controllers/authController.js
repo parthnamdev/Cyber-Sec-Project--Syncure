@@ -170,7 +170,7 @@ const twoStepVerification = (req, res) => {
   req.user = myCache.get(req.params.username);
   const isValid = totp.check(req.body.totp, secret);
   if (req.isAuthenticated() && isValid == true) {
-    myCache.take(req.params.username);
+    
     const token = jwt.sign(
       { username: req.params.username, uuid: req.user.uuid },
       process.env.JWT_SECRET,
@@ -316,11 +316,19 @@ const toggleTwoFA = (req, res) => {
 }
 
 const logout = (req, res) => {
-  if(req.isAuthenticated()) {
+  // if(req.isAuthenticated()) {
+
+  
   axios.put('https://cloud-api.yandex.net/v1/disk/resources/unpublish', null, { params: { path: '/Syncure_data/'+req.user.username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
   .then( response => {
     // res.json(response);
     req.logout();
+    try {
+      myCache.take(req.params.username);
+    } catch (error) {
+      console.log(error);
+    }
+   
     res.json({
       status: "success",
       message: "successfully logged out",
@@ -328,15 +336,21 @@ const logout = (req, res) => {
       data: {}
     });
   })
-  .catch(errr => {res.send("err in logging out");});
-  } else {
-    res.json({
-      status: "failure",
-      message: "already logged out",
-      errors: [],
-      data: {}
-    });
-  }
+  .catch(errr => {res.json({
+    status: "failure",
+    message: "err in logging out",
+    errors: [errr],
+    data: {}
+  });
+});
+  // } else {
+  //   res.json({
+  //     status: "failure",
+  //     message: "already logged out",
+  //     errors: [],
+  //     data: {}
+  //   });
+  // }
 };
 
 module.exports = {
