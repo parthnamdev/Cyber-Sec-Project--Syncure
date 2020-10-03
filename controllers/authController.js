@@ -6,6 +6,8 @@ const nodemailer = require("nodemailer");
 const { body, validationResult } = require('express-validator');
 const { totp } = require('otplib');
 const uid = require('rand-token').uid;
+const NodeCache = require('node-cache');
+const myCache = new NodeCache();
 totp.options = { 
     digits: 8,
     step: 150
@@ -75,12 +77,13 @@ const login = (req, res, next) => {
                       const userRedirect = "mail";
                       console.log(req.session);
                       req.session.save();
+                      
                       res.redirect(userRedirect);
                   }
                 } else {
-                    const userRedirect = "mail";
-                    console.log(req.session);
-                    req.session.save();
+                    const userToCache = req.user.username;
+                    const userRedirect = "mail/" + userToCache;
+                    myCache.set(userToCache, req.user);
                     res.redirect(userRedirect);
                 }
               });
@@ -110,9 +113,9 @@ const login = (req, res, next) => {
 };
 
 const mail = async (req, res) => {
-  console.log(req.session);
-  console.log(req.isAuthenticated());
+  req.user = myCache.get(req.params.username);
   if(req.isAuthenticated()) {
+    myCache.take(req.params.username);
     const transporter = nodemailer.createTransport({
       service: "SendGrid",
       auth: {

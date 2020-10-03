@@ -9,7 +9,7 @@ const authenticate = require('../middleware/authenticate');
 router.post('/login', authController.login);
 router.get('/verify/:username', authController.twoStepVerification)
 router.post('/logout', authController.logout);
-router.get('/mail', authController.mail);
+router.get('/mail/:username', authController.mail);
 router.post('/toggleTwoFA',  [
     body('username', 'username should be minimum of 6 characters').isLength({min: 6}),
     body('twoFA','it should be either true of false').isBoolean().notEmpty()
