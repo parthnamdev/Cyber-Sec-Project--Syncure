@@ -29,8 +29,7 @@ const login = (req, res, next) => {
             username: req.body.username,
             password: req.body.password,
           });
-          console.log(req.body.username);
-          console.log(req.body.password);
+          
           req.login(user, function (err) {
             if (err) {
               console.log(err);
@@ -74,11 +73,10 @@ const login = (req, res, next) => {
                       
                     });
                   } else {
-                      const userRedirect = "mail";
-                      console.log(req.session);
-                      req.session.save();
-                      
-                      res.redirect(userRedirect);
+                    const userToCache = req.user.username;
+                    const userRedirect = "mail/" + userToCache;
+                    myCache.set(userToCache, req.user);
+                    res.redirect(userRedirect);
                   }
                 } else {
                     const userToCache = req.user.username;
@@ -90,7 +88,7 @@ const login = (req, res, next) => {
               
             }
           });
-          console.log(req.isAuthenticated());
+          
         } else {
           res.json({
             status: "failure",

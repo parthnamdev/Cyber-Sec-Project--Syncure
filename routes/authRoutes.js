@@ -3,8 +3,6 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 
 const authController = require('../controllers/authController');
-const isLogged = require('../middleware/isLogged');
-const authenticate = require('../middleware/authenticate');
 
 router.post('/login', authController.login);
 router.get('/verify/:username', authController.twoStepVerification)
