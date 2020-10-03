@@ -1,10 +1,24 @@
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
+const jwtInactive = require('../models/jwtInactiveModel');
 
 const authenticate = (req, res, next) => {
     try {
+            
         // if(req.isAuthenticated()){
             const token = req.headers.authorization.split(' ')[1]
+            // jwtInactive.findOne({token: token}, (err, found) => {
+            //     if(!err & !found) {
+                    
+            //     } else {
+            //             res.json({
+            //                 status: "failure",
+            //                 message: "unauthorised",
+            //                 errors: [],
+            //                 data: {}
+            //             })
+            //         }
+            // });
             const decode = jwt.verify(token, process.env.JWT_SECRET)
 
             req.user = decode
@@ -21,7 +35,7 @@ const authenticate = (req, res, next) => {
 
     } catch(err) {
         res.json({
-            message: "authentication failed",
+            message: "authentication failed. invalid jwt",
             errors: [err],
             status: "failure",
             data: {}

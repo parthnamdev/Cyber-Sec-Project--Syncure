@@ -7,7 +7,9 @@ const { body, validationResult } = require('express-validator');
 const { totp } = require('otplib');
 const uid = require('rand-token').uid;
 const NodeCache = require('node-cache');
+const jwtInactive = require("../models/jwtInactiveModel");
 const myCache = new NodeCache();
+
 totp.options = { 
     digits: 8,
     step: 150
@@ -317,14 +319,21 @@ const toggleTwoFA = (req, res) => {
 
 const logout = (req, res) => {
   // if(req.isAuthenticated()) {
-
+  const token = req.headers.authorization.split(' ')[1];
   
-  axios.put('https://cloud-api.yandex.net/v1/disk/resources/unpublish', null, { params: { path: '/Syncure_data/'+req.user.username}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+  axios.put('https://cloud-api.yandex.net/v1/disk/resources/unpublish', null, { params: { path: '/Syncure_data/'+req.user.uuid}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
   .then( response => {
     // res.json(response);
-    req.logout();
+    
     try {
+      req.logout();
       myCache.take(req.params.username);
+      const jwt = new jwtInactive({
+        token: token
+      });
+      jwt.save(err => {
+        console.log(err);
+      });
     } catch (error) {
       console.log(error);
     }
