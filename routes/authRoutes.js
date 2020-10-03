@@ -5,7 +5,7 @@ const { body, validationResult } = require('express-validator');
 const authController = require('../controllers/authController');
 
 router.post('/login', authController.login);
-router.get('/verify/:username', authController.twoStepVerification)
+router.post('/verify/:username', authController.twoStepVerification)
 router.post('/logout', authController.logout);
 router.get('/mail/:username', authController.mail);
 router.post('/toggleTwoFA',  [
