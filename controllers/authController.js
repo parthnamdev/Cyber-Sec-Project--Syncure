@@ -73,10 +73,14 @@ const login = (req, res, next) => {
                     });
                   } else {
                       const userRedirect = "mail";
+                      console.log(req.session);
+                      req.session.save();
                       res.redirect(userRedirect);
                   }
                 } else {
                     const userRedirect = "mail";
+                    console.log(req.session);
+                    req.session.save();
                     res.redirect(userRedirect);
                 }
               });
@@ -106,47 +110,59 @@ const login = (req, res, next) => {
 };
 
 const mail = async (req, res) => {
-  const transporter = nodemailer.createTransport({
-    service: "SendGrid",
-    auth: {
-      user: process.env.MAIL_USERNAME,
-      pass: process.env.MAIL_PASS,
-    },
-  });
-
-  const toptToken = totp.generate(secret);
-  const textMsg = `${"Your One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for next " + totp.timeRemaining() + " seconds.\n\nThis OTP is based on time for security purposes.\nKindly resend request if expiration time is very less."}`;
-  const toUser = req.user.email;
-
-  const mailOptions = {
-    from: {
-            name: 'Syncure app',
-            address: process.env.MAIL_USER
-          },
-    to: toUser,
-    subject: "OTP - Authentication - Syncure app",
-    text: textMsg,
-  };
-
-  const info = await transporter.sendMail(mailOptions).catch((err) => {
+  console.log(req.session);
+  console.log(req.isAuthenticated());
+  if(req.isAuthenticated()) {
+    const transporter = nodemailer.createTransport({
+      service: "SendGrid",
+      auth: {
+        user: process.env.MAIL_USERNAME,
+        pass: process.env.MAIL_PASS,
+      },
+    });
+  
+    const toptToken = totp.generate(secret);
+    const textMsg = `${"Your One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for next " + totp.timeRemaining() + " seconds.\n\nThis OTP is based on time for security purposes.\nKindly resend request if expiration time is very less."}`;
+    const toUser = req.user.email;
+  
+    const mailOptions = {
+      from: {
+              name: 'Syncure app',
+              address: process.env.MAIL_USER
+            },
+      to: toUser,
+      subject: "OTP - Authentication - Syncure app",
+      text: textMsg,
+    };
+  
+    const info = await transporter.sendMail(mailOptions).catch((err) => {
+      res.json({
+        status: "failure",
+        message: "",
+        errors: err,
+        data: {}
+      });
+    });
+    console.log(`Mail sent to : ${info.messageId}`);
+    return res.json({
+      status: "success",
+      message: "Mail Sent",
+      errors: [],
+      data: {
+        response: info.response,
+        timeRemaining: totp.timeRemaining()
+      }
+      
+    });
+  } else {
     res.json({
       status: "failure",
-      message: "",
-      errors: err,
+      message: "unauthorised",
+      errors: [],
       data: {}
-    });
-  });
-  console.log(`Mail sent to : ${info.messageId}`);
-  return res.json({
-    status: "success",
-    message: "Mail Sent",
-    errors: [],
-    data: {
-      response: info.response,
-      timeRemaining: totp.timeRemaining()
-    }
-    
-  });
+  })
+  }
+  
 };
 
 const twoStepVerification = (req, res) => {

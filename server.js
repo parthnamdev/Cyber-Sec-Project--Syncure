@@ -7,6 +7,7 @@ const passport = require("passport");
 const cors = require('cors');
 const helmet = require('helmet');
 const expressSession = require('express-session');
+const MongoStore = require('connect-mongo')(expressSession);
 const { body, validationResult } = require('express-validator');
 const app = express();
 
@@ -23,9 +24,12 @@ const adminRouter = require('./routes/adminRoutes');
 
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(bodyParser.json());
-
+app.use((req,res,next) => {
+    res.setHeader('Access-Control-Allow-Credentials','true');
+    next();
+})
 // app.use( mediaAccess, express.static(__dirname + "/uploads"));
-app.use(expressSession({secret: process.env.SESSION_SECRET, saveUninitialized: false, resave: false}));
+app.use(expressSession({secret: process.env.SESSION_SECRET, saveUninitialized: false, resave: false, store: new MongoStore({mongooseConnection: mongoose.connection})}));
 app.use(passport.initialize());
 app.use(passport.session());
 
