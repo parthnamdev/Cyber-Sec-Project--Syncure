@@ -7,22 +7,22 @@ const authenticate = (req, res, next) => {
             
         // if(req.isAuthenticated()){
             const token = req.headers.authorization.split(' ')[1]
-            // jwtInactive.findOne({token: token}, (err, found) => {
-            //     if(!err & !found) {
-                    
-            //     } else {
-            //             res.json({
-            //                 status: "failure",
-            //                 message: "unauthorised",
-            //                 errors: [],
-            //                 data: {}
-            //             })
-            //         }
-            // });
-            const decode = jwt.verify(token, process.env.JWT_SECRET)
+            jwtInactive.findOne({token: token}, (err, found) => {
+                if(!err & !found) {
+                    const decode = jwt.verify(token, process.env.JWT_SECRET)
 
-            req.user = decode
-            next()
+                    req.user = decode
+                    next()
+                } else {
+                        res.json({
+                            status: "failure",
+                            message: "unauthorised - invalid jwt",
+                            errors: [err],
+                            data: {}
+                        })
+                    }
+            });
+            
         // } else {
         //     res.json({
         //         status: "failure",
