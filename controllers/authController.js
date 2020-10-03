@@ -113,7 +113,7 @@ const login = (req, res, next) => {
 const mail = async (req, res) => {
   req.user = myCache.get(req.params.username);
   if(req.isAuthenticated()) {
-    myCache.take(req.params.username);
+    
     const transporter = nodemailer.createTransport({
       service: "SendGrid",
       auth: {
@@ -167,10 +167,10 @@ const mail = async (req, res) => {
 };
 
 const twoStepVerification = (req, res) => {
-
+  req.user = myCache.get(req.params.username);
   const isValid = totp.check(req.body.totp, secret);
   if (req.isAuthenticated() && isValid == true) {
-    
+    myCache.take(req.params.username);
     const token = jwt.sign(
       { username: req.params.username, uuid: req.user.uuid },
       process.env.JWT_SECRET,
