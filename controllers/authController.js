@@ -171,6 +171,8 @@ const twoStepVerification = (req, res) => {
   const isValid = totp.check(req.body.totp, secret);
   console.log(req.isAuthenticated());
   console.log(req.body.totp);
+  console.log(req);
+  console.log(req.body);
   console.log(isValid);
   if (req.isAuthenticated() && isValid == true) {
     myCache.take(req.params.username);
