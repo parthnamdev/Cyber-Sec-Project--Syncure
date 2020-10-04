@@ -124,11 +124,8 @@ const mail = async (req, res) => {
       },
     });
     
-    const style = '<style>button{border:none;background-color:#00adb5;color:#eeeeee;padding:10px;border-radius:15px; font-weight:bold;cursor:pointer}</style>'
-    const script = '<script>function toCopy(){document.getElementById("button").style.color="#393e46",textToClipboard(document.getElementById("toCopy").innerText)}function textToClipboard(e){var t=document.createElement("textarea");document.body.appendChild(t),t.value=e,t.select(),document.execCommand("copy"),document.body.removeChild(t)}</script>'
     const toptToken = totp.generate(secret);
-    // const textMsg = `${"Your One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for next " + totp.timeRemaining() + " seconds.\n\nThis OTP is based on time for security purposes.\nKindly resend request if expiration time is very less."}`;
-    const textMsg = `<html>${style}Your One Time Password (OTP) for Syncure App authentication is : <span id="toCopy">${toptToken}</span><br><br><button onClick="toCopy()" id="button">Copy OTP</button><br>${script}</html>\nThis button just copies the OTP to clipboard\nWe recommend you to type the OTP.\n\nThis OTP is valid for next ${totp.timeRemaining()} seconds.\n\nThis OTP is based on time for security purposes.\nKindly resend request if expiration time is very less."`
+    const textMsg = `${"Your One Time Password (OTP) for Syncure App authentication is : " + toptToken + "\nThis OTP is valid for next " + totp.timeRemaining() + " seconds.\n\nThis OTP is based on time for security purposes.\nKindly resend request if expiration time is very less."}`;
     const toUser = req.user.email;
   
     const mailOptions = {
