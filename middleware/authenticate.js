@@ -9,10 +9,20 @@ const authenticate = (req, res, next) => {
             const token = req.headers.authorization.split(' ')[1]
             jwtInactive.findOne({token: token}, (err, found) => {
                 if(!err & !found) {
-                    const decode = jwt.verify(token, process.env.JWT_SECRET)
+                    try {
+                        const decode = jwt.verify(token, process.env.JWT_SECRET)
 
-                    req.user = decode
-                    next()
+                        req.user = decode
+                        next() 
+                    } catch (error) {
+                        res.json({
+                            message: "authentication failed. invalid jwt or jwt expired",
+                            errors: [error],
+                            status: "failure",
+                            data: {}
+                        });
+                    }
+                    
                 } else {
                         res.json({
                             status: "failure",
@@ -35,7 +45,7 @@ const authenticate = (req, res, next) => {
 
     } catch(err) {
         res.json({
-            message: "authentication failed. invalid jwt",
+            message: "authentication failed. invalid jwt or jwt expired",
             errors: [err],
             status: "failure",
             data: {}
