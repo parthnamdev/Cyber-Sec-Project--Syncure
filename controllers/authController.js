@@ -11,7 +11,7 @@ const jwtInactive = require("../models/jwtInactiveModel");
 const myCache = new NodeCache();
 
 totp.options = { 
-    digits: 8,
+    digits: 6,
     step: 150
    };
 const opts = totp.options;

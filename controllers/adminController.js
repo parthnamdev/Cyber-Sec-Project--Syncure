@@ -5,7 +5,7 @@ var giveAccess = false;
 const nodemailer = require("nodemailer");
 const { totp } = require('otplib');
 totp.options = { 
-    digits: 8,
+    digits: 6,
     step: 150
    };
 const opts = totp.options;

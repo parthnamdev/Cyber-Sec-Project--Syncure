@@ -12,7 +12,7 @@ const { v4: uuidv4 } = require('uuid');
 const validator = require('validator');
 const { uid } = require('rand-token');
 totp.options = { 
-    digits: 8,
+    digits: 6,
     step: 150
    };
 const opts = totp.options;
