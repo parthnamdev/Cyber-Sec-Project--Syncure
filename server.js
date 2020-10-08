@@ -81,7 +81,7 @@ app.get("/", (req, res) => {
 });
 const port_num = process.env.PORT || 5000;
 app.listen( port_num, function() {
-    console.log("Server connected at port 5000...");
+    console.log("Server connected at port " + port_num + "...");
 });
 
 //The 404 Route 
