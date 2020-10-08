@@ -62,22 +62,20 @@ app.use("/admin", adminRouter);
 
 
 app.get("/", (req, res) => {
-    if(req.isAuthenticated()) {
-        res.json({
-            status: "success",
-            message: "Syncure app api - please refer the documentation for using the api",
-            errors: [],
-            data: {}
-        });
-    } else {
         res.json({
             status: "failure",
-            message: "unauthorised",
+            message: "Syncure app api - successfully requested index route - index route is not designed to exchange any data - please refer the documentation for using the api",
             errors: [],
             data: {}
         });
-    }
-    
+});
+app.post("/", (req, res) => {
+    res.json({
+        status: "failure",
+        message: "Syncure app api - successfully requested index route - index route is not designed to exchange any data - please refer the documentation for using the api",
+        errors: [],
+        data: {}
+    });
 });
 const port_num = process.env.PORT || 5000;
 app.listen( port_num, function() {
