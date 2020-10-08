@@ -3,6 +3,7 @@ const Article = require('../models/articleModel');
 const Status = require('../models/updateStatusModel');
 const fs = require('fs');
 const { body, validationResult } = require('express-validator');
+const jwt = require("jsonwebtoken");
 const axios = require('axios');
 const passport = require('passport');
 const nodemailer = require("nodemailer");
@@ -170,6 +171,7 @@ const twoFactorAuth = (req, res) => {
                     if(!err) {
                         // const tempStoreUser = req.params.username;
                         const tempStoreUUID = newUserRegister.uuid;
+                        const tempStoreUsername = newUserRegister.username;
                         
                         axios.put('https://cloud-api.yandex.net/v1/disk/resources', null,{ params: { path: '/Syncure_data/'+tempStoreUUID}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
                         .then(response => {
@@ -200,13 +202,19 @@ const twoFactorAuth = (req, res) => {
                                 if(!err){
                                     fs.mkdir(folder, {recursive: true}, function(erro) {
                                         if(!erro) {
+                                            const jwtToken = jwt.sign(
+                                                { username: tempStoreUsername, uuid: tempStoreUUID },
+                                                process.env.JWT_SECRET,
+                                                { expiresIn: "15m" }
+                                              );
                                             console.log("successfully created local directory");
                                             res.json({
                                                 status: "success",
                                                 message: "succesfully added new user",
                                                 errors: [],
                                                 data: {
-                                                    uuid: tempStoreUUID
+                                                    uuid: tempStoreUUID,
+                                                    token: jwtToken
                                                 }
                                             });
                                         } else {

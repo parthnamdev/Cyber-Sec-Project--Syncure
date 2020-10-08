@@ -29,7 +29,7 @@ app.use((req,res,next) => {
     next();
 })
 // app.use( mediaAccess, express.static(__dirname + "/uploads"));
-app.use(expressSession({secret: process.env.SESSION_SECRET, saveUninitialized: false, resave: false, store: new MongoStore({mongooseConnection: mongoose.connection})}));
+app.use(expressSession({secret: process.env.SESSION_SECRET, saveUninitialized: false, resave: false, cookie: { maxAge: 60*60*1000 }, store: new MongoStore({mongooseConnection: mongoose.connection, autoRemove: 'interval', autoRemoveInterval: 60})}));
 app.use(passport.initialize());
 app.use(passport.session());
 
