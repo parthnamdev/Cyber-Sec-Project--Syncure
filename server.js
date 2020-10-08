@@ -21,6 +21,7 @@ const userRouter = require("./routes/userRoutes");
 const articleRouter = require("./routes/articleRoutes");
 const authRouter = require('./routes/authRoutes');
 const adminRouter = require('./routes/adminRoutes');
+const nullRouter = require('./routes/nullRoutes');
 
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(bodyParser.json());
@@ -60,86 +61,9 @@ app.use("/api/article", articleRouter);
 app.use("/api", authRouter);
 app.use("/admin", adminRouter);
 
-
-app.get("/", (req, res) => {
-        res.json({
-            status: "failure",
-            message: "Syncure app api - successfully requested index route - index route is not designed to exchange any data - please refer the documentation for using the api",
-            errors: [],
-            data: {}
-        });
-});
-app.post("/", (req, res) => {
-    res.json({
-        status: "failure",
-        message: "Syncure app api - successfully requested index route - index route is not designed to exchange any data - please refer the documentation for using the api",
-        errors: [],
-        data: {}
-    });
-});
 const port_num = process.env.PORT || 5000;
 app.listen( port_num, function() {
     console.log("Server connected at port " + port_num + "...");
 });
 
-//The 404 Route 
-app.get('*', function(req, res){
-    res.status(404).json({
-        status: "failure",
-        message: "The route doesn't exist. Please refer the documentation. make sure you didn't make a get request instead of post",
-        errors: [
-            {
-                type: "404 - file not found"
-            }
-        ],
-        data: {}
-    });
-});
-app.post('*', function(req, res){
-    res.status(404).json({
-        status: "failure",
-        message: "The route doesn't exist. Please refer the documentation. make sure you didn't make a post request instead of get",
-        errors: [
-            {
-                type: "404 - file not found"
-            }
-        ],
-        data: {}
-    });
-});
-app.put('*', function(req, res){
-    res.status(404).json({
-        status: "failure",
-        message: "The route doesn't exist. Please refer the documentation. make sure you didn't make a put request by mistake",
-        errors: [
-            {
-                type: "404 - file not found"
-            }
-        ],
-        data: {}
-    });
-});
-app.patch('*', function(req, res){
-    res.status(404).json({
-        status: "failure",
-        message: "The route doesn't exist. Please refer the documentation. make sure you didn't make a patch request by mistake",
-        errors: [
-            {
-                type: "404 - file not found"
-            }
-        ],
-        data: {}
-    });
-});
-app.delete('*', function(req, res){
-    res.status(404).json({
-        status: "failure",
-        message: "The route doesn't exist. Please refer the documentation. make sure you didn't make a delete method request by mistake",
-        errors: [
-            {
-                type: "404 - file not found"
-            }
-        ],
-        data: {}
-    });
-});
+app.use("*", nullRouter);
