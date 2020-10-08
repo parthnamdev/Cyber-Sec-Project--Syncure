@@ -86,7 +86,55 @@ app.listen( port_num, function() {
 app.get('*', function(req, res){
     res.status(404).json({
         status: "failure",
-        message: "File not found or the route doesn't exist. Please refer the documentation",
+        message: "The route doesn't exist. Please refer the documentation. make sure you didn't make a get request instead of post",
+        errors: [
+            {
+                type: "404 - file not found"
+            }
+        ],
+        data: {}
+    });
+});
+app.post('*', function(req, res){
+    res.status(404).json({
+        status: "failure",
+        message: "The route doesn't exist. Please refer the documentation. make sure you didn't make a post request instead of get",
+        errors: [
+            {
+                type: "404 - file not found"
+            }
+        ],
+        data: {}
+    });
+});
+app.put('*', function(req, res){
+    res.status(404).json({
+        status: "failure",
+        message: "The route doesn't exist. Please refer the documentation. make sure you didn't make a put request by mistake",
+        errors: [
+            {
+                type: "404 - file not found"
+            }
+        ],
+        data: {}
+    });
+});
+app.patch('*', function(req, res){
+    res.status(404).json({
+        status: "failure",
+        message: "The route doesn't exist. Please refer the documentation. make sure you didn't make a patch request by mistake",
+        errors: [
+            {
+                type: "404 - file not found"
+            }
+        ],
+        data: {}
+    });
+});
+app.delete('*', function(req, res){
+    res.status(404).json({
+        status: "failure",
+        message: "The route doesn't exist. Please refer the documentation. make sure you didn't make a delete method request by mistake",
         errors: [
             {
                 type: "404 - file not found"
