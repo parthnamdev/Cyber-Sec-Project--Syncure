@@ -9,7 +9,7 @@ router.post('/requestAccess', [
     ], adminController.requestAccess);
 router.get('/mail', adminController.mail);
 router.post('/verify', [
-    body('totp','length of OTP should be 8').isLength(8)
+    body('totp','length of OTP should be 6').isLength(6)
     ], adminController.twoFactorAuth);
 router.get('/users', adminController.users);
 router.get('/articles',adminController.articles);

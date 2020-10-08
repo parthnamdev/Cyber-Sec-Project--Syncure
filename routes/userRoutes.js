@@ -11,10 +11,10 @@ router.get('/mail', userController.mail);
 router.post('/verify/:username', [
     param('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('password', 'password should be minimum of 6 characters').isLength({min: 6}),
-    body('totp','length of OTP should be 8').isLength(8)
+    body('totp','length of OTP should be 6').isLength(6)
     ], userController.twoFactorAuth);
 router.post('/verifyMail', authenticate, [
-    body('totp','length of OTP should be 8').isLength(8)
+    body('totp','length of OTP should be 6').isLength(6)
 ], userController.emailtwoFactorAuth);
 router.post('/register', [
         body('email', 'invalid email').isEmail(),
@@ -27,7 +27,7 @@ router.post('/forgotPassword', [
     ], userController.forgotPassword);
 router.post('/resetPassword', [
     body('email', 'invalid email').isEmail(),
-    body('totp','length of OTP should be 8').isLength(8),
+    body('totp','length of OTP should be 6').isLength(6),
     body('newPassword', 'newPassword should be minimum of 6 characters').isLength({min: 6})
     ], userController.reset);
 router.post('/getErrorStatus', authenticate, [

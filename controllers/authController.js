@@ -20,9 +20,14 @@ var check;
 // const toptToken = totp.generate(secret);
 
 const login = (req, res, next) => {
-  if(req.isAuthenticated() === true){
-    const userRedirect = "mail";
-    res.redirect(userRedirect);
+  const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            status: "failure",
+            message: "validation error",
+            errors: errors.array(),
+            data: {}
+          });
   } else {
     User.findOne({ username: req.body.username }, function (err, foundUser) {
       if (!err) {
@@ -113,6 +118,15 @@ const login = (req, res, next) => {
 };
 
 const mail = async (req, res) => {
+  const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            status: "failure",
+            message: "validation error",
+            errors: errors.array(),
+            data: {}
+          });
+    } else {
   req.user = myCache.get(req.params.username);
   if(req.isAuthenticated()) {
     
@@ -165,10 +179,19 @@ const mail = async (req, res) => {
       data: {}
   })
   }
-  
+}
 };
 
 const twoStepVerification = (req, res) => {
+  const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            status: "failure",
+            message: "validation error",
+            errors: errors.array(),
+            data: {}
+          });
+    } else {
   req.user = myCache.get(req.params.username);
   const isValid = totp.check(req.body.totp, secret);
   if (req.isAuthenticated() && isValid == true) {
@@ -195,6 +218,7 @@ const twoStepVerification = (req, res) => {
       data: {}
     });
   }
+}
 };
 
 const toggleTwoFA = (req, res) => {
@@ -318,6 +342,15 @@ const toggleTwoFA = (req, res) => {
 }
 
 const logout = (req, res) => {
+  const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            status: "failure",
+            message: "validation error",
+            errors: errors.array(),
+            data: {}
+          });
+    } else {
   // if(req.isAuthenticated()) {
   const token = req.headers.authorization.split(' ')[1];
   
@@ -360,6 +393,7 @@ const logout = (req, res) => {
   //     data: {}
   //   });
   // }
+}
 };
 
 module.exports = {
