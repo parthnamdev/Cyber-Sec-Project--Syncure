@@ -37,7 +37,7 @@ const login = (req, res, next) => {
             password: req.body.password,
           });
           
-          req.login(user, function (err) {
+          req.login(user, function(err) {
             if (err) {
               console.log(err);
               res.json({
@@ -47,7 +47,7 @@ const login = (req, res, next) => {
                 data: {}
               });
             } else {
-              passport.authenticate("local")(req, res, async function() {
+              passport.authenticate("local", { failureRedirect: '/api/loginFail' })(req, res, async function() {
                 // const userRedirect = "verify/" + user.username;
                 // res.redirect(userRedirect);
                 
@@ -116,6 +116,15 @@ const login = (req, res, next) => {
   }
   
 };
+
+const loginFail = (req, res) => {
+  res.json({
+    status: "failure",
+    message: "failed login or incorrect password",
+    errors: [],
+    data: {}
+  });
+}
 
 const mail = async (req, res) => {
   const errors = validationResult(req);
@@ -401,5 +410,6 @@ module.exports = {
   logout,
   twoStepVerification,
   mail,
-  toggleTwoFA
+  toggleTwoFA,
+  loginFail
 };

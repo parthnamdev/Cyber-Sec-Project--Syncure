@@ -9,6 +9,7 @@ router.post('/login', [
     body('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('password', 'password should be minimum of 6 characters').isLength({min: 6})
     ], authController.login);
+router.get('/loginFail', authController.loginFail);
 router.post('/verify/:username',  [
     param('username', 'username should be minimum of 6 characters').isLength({min: 6}),
     body('totp','length of OTP should be 6').isLength(6)
