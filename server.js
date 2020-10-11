@@ -50,6 +50,12 @@ db.once("open", () => {
                 if(err) throw err;
             });
         });
+        found.forEach(element => {
+            const create_folder = `${"./downloads/" + element.uuid}`;
+            fs.mkdir(create_folder, {recursive: true}, function(err) {
+                if(err) throw err;
+            });
+        });
     });
     console.log("database connected");
 });
