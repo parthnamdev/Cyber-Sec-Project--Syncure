@@ -943,7 +943,7 @@ const resendForEmailUpdate = async (req, res) => {
             
               const info = await transporter.sendMail(mailOptions).catch((err) => {
                 // console.log(err);
-                console.log({
+                res.json({
                     status: "failure",
                     message: "error sending mail",
                     errors: [err],
@@ -966,7 +966,7 @@ const resendForEmailUpdate = async (req, res) => {
                 });
               });
               console.log(`Mail sent to : ${info.messageId}`);
-              console.log({
+              return res.json({
                 status: "success",
                 message: "Mail Sent",
                 errors: [],
