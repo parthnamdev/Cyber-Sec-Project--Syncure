@@ -39,7 +39,7 @@ var upload = (req, res, next) => {
                 } );
             },
             limits: {
-                fileSize: 1024 * 1024 * 40
+                fileSize: 1024 * 1024 * 20
             }
         }).single('media');
 
@@ -47,7 +47,7 @@ var upload = (req, res, next) => {
         if (err instanceof multer.MulterError) {
             res.json({
                 status: "failure",
-                message: "multer err - file greater than 40 mB or invalid file",
+                message: "multer err - file greater than 20 mB or invalid file",
                 errors: [err],
                 data: {}
             })

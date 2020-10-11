@@ -361,13 +361,9 @@ const logout = (req, res) => {
           });
     } else {
   // if(req.isAuthenticated()) {
-  const token = req.headers.authorization.split(' ')[1];
   
-  axios.put('https://cloud-api.yandex.net/v1/disk/resources/unpublish', null, { params: { path: '/Syncure_data/'+req.user.uuid}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
-  .then( response => {
-    // res.json(response);
-    
     try {
+      const token = req.headers.authorization.split(' ')[1];
       req.logout();
       myCache.take(req.params.username);
       const jwt = new jwtInactive({
@@ -376,24 +372,18 @@ const logout = (req, res) => {
       jwt.save(err => {
         console.log(err);
       });
+      res.json({
+        status: "success",
+        message: "successfully logged out",
+        errors: [],
+        data: {}
+      });
     } catch (error) {
       console.log(error);
     }
    
-    res.json({
-      status: "success",
-      message: "successfully logged out",
-      errors: [],
-      data: {}
-    });
-  })
-  .catch(errr => {res.json({
-    status: "failure",
-    message: "err in logging out",
-    errors: [errr],
-    data: {}
-  });
-});
+    
+  
   // } else {
   //   res.json({
   //     status: "failure",

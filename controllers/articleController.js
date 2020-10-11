@@ -2,7 +2,8 @@ const Article = require('../models/articleModel');
 const fs = require('fs');
 const { body, validationResult } = require('express-validator');
 const axios = require('axios');
-
+const AES = require('crypto-js/aes');
+const enc = require('crypto-js/enc-utf8');
 // const index = (req, res, next) => {
 //     Article.find(function(err, foundArticles) {
 //         if(!err) {
@@ -15,15 +16,32 @@ const axios = require('axios');
 //     });
 // }
 
+const encryptPassword = (original) => {
+    const ciphertext = AES.encrypt(original, process.env.AES_KEY).toString();
+    return ciphertext;
+}
+
+const decryptPassword = (ciphertext) => {
+    const bytes  = AES.decrypt(ciphertext, process.env.AES_KEY);
+    const originalText = bytes.toString(enc);
+    return originalText;
+}
+
 const find = (req, res) => {
     Article.findOne( {uuid: req.user.uuid}, function(err, foundArticle) {
         if(!err) {
+            const decryptedArticle = foundArticle;
+            decryptedArticle.passwords.forEach(element => {
+                element.title = decryptPassword(element.title);
+                element.code = decryptPassword(element.code);
+            });
+
             res.json({
                 status: "success",
                 message: "",
                 errors: [],
                 data: {
-                    foundItems: foundArticle
+                    foundItems: decryptedArticle
                 }
             });
         } else {
@@ -51,12 +69,17 @@ const findPassword = (req, res) => {
             if(!err && foundUser) {
                 foundUser.passwords.forEach(element => {
                     if(element._id == req.body.id){
+
+                        const decryptedUser = element;
+                        decryptedUser.title = decryptPassword(decryptedUser.title);
+                        decryptedUser.code = decryptPassword(decryptedUser.code);                        
+
                         res.json({
                             status: "success",
                             message: "",
                             errors: [],
                             data: {
-                                foundItems: element
+                                foundItems: decryptedUser
                             }
                         });
                     }
@@ -86,12 +109,17 @@ const findAllPasswords = (req, res) => {
     } else {
         Article.findOne( {uuid: req.user.uuid}, function(err, foundUser) {
             if(!err && foundUser) {
+                const decryptedFoundUser = foundUser;
+                decryptedFoundUser.passwords.forEach(element => {
+                element.title = decryptPassword(element.title);
+                element.code = decryptPassword(element.code);
+            });
                 res.json({
                     status: "success",
                     message: "",
                     errors: [],
                     data: {
-                        foundItems: foundUser.passwords
+                        foundItems: decryptedFoundUser.passwords
                     }
                 })
             } else {
@@ -168,7 +196,7 @@ const addMedia = (req, res) => {
                                       .then( resp => { 
                                         fs.unlink(req.file.path, (err) => {
                                             if (err) {
-                                              console.error(err)
+                                              console.log(err)
                                               return
                                             }
                                             //file removed
@@ -185,7 +213,7 @@ const addMedia = (req, res) => {
                                         .catch(errr => {res.json({
                                             status: "failure",
                                             message: "disk api err",
-                                            errors: [errr],
+                                            errors: [{message: errr.message, name: errr.name}],
                                             data: {}
                                         })});
                                 })
@@ -194,7 +222,7 @@ const addMedia = (req, res) => {
                                       res.json({
                                         status: "failure",
                                         message: "disk api err",
-                                        errors: [error],
+                                        errors: [{message: error.message, name: error.name}],
                                         data: {}
                                     })
                                     });
@@ -261,8 +289,8 @@ const addPassword = (req, res) => {
         Article.findOne( {uuid: req.user.uuid}, function(err, foundArticle) {
             if(!err && foundArticle) {
                 const newPassword = {
-                    title: req.body.passwordTitle,
-                    code: req.body.passwordCode
+                    title: encryptPassword(req.body.passwordTitle),
+                    code: encryptPassword(req.body.passwordCode)
                 }
                 let password_id;
                 foundArticle.passwords.push(newPassword);
@@ -348,7 +376,7 @@ const removeMedia = (req, res) => {
                             res.json({
                                 status: "failure",
                                 message: "disk api err",
-                                errors: [errr],
+                                errors: [{message: errr.message, name: errr.name}],
                                 data: {}
                             });
                         });
@@ -416,35 +444,6 @@ const removePassword = (req, res) => {
     
 }
 
-const getMediaById = (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        status: "failure",
-        message: "validation error",
-        errors: errors.array(),
-        data: {}
-    });
-    } else {
-        Article.findOne( {uuid: req.user.uuid}, function(err, foundUser) {
-            if(!err && foundUser) {
-                foundUser.media.forEach(element => {
-                    if(element._id == req.body.id){
-                        res.redirect('getMedia/'+element.name);
-                    }
-                });
-            } else {
-                res.json({
-                    status: "failure",
-                    message: "no media/user found",
-                    errors: [err],
-                    data: {}
-                });
-            }
-        });
-    }
-}
-
  
 const downloadMediaById = (req, res) => {
     const errors = validationResult(req);
@@ -456,11 +455,77 @@ const downloadMediaById = (req, res) => {
         data: {}
     });
     } else {
-        Article.findOne( {username: req.body.username}, function(err, foundUser) {
+        const uuid = req.user.uuid;
+        Article.findOne( {uuid: uuid}, function(err, foundUser) {
             if(!err && foundUser) {
                 foundUser.media.forEach(element => {
                     if(element._id == req.body.id){
-                        res.redirect('downloadMedia/'+element.name);
+                        //  res.redirect('downloadMedia/'+element.name);
+                        const media = element.name;
+
+                        axios.get('https://cloud-api.yandex.net/v1/disk/resources/download', { params: { path: '/Syncure_data/'+uuid+'/'+media}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+                        .then( response => {
+                            axios.get(response.data.href)
+                            .then(async result => {
+                              try {
+                                const toDecrypt = result.data;
+                                const test = toDecrypt.toString('utf8');
+                                const bytes  = AES.decrypt(test, process.env.AES_KEY);
+                                const originalText = bytes.toString(enc);
+                                
+                                fs.writeFileSync('./downloads/'+uuid+'/'+media, originalText, {encoding: 'base64'});
+                                await res.download('./downloads/'+uuid+'/'+media, err => {
+                                    if(err) {
+                                        res.json({
+                                            status: "failure",
+                                            message: "err downloading file",
+                                            errors: [err],
+                                            data: {}
+                                        });
+                                        fs.unlink('./downloads/'+uuid+'/'+media, er => {
+                                            if(err) {
+                                                console.log(er);
+                                            } else {
+                                                console.log("temp download link removed successfully");
+                                            }
+                                        });
+                                    } else {
+                                        fs.unlink('./downloads/'+uuid+'/'+media, er => {
+                                            if(err) {
+                                                console.log(er);
+                                            } else {
+                                                console.log("temp download link removed successfully");
+                                            }
+                                        });
+                                    }
+                                });
+                              } catch (error) {
+                                    res.json({
+                                        status: "failure",
+                                        message: "err decrypting the file from server",
+                                        errors: [error],
+                                        data: {}
+                                    });
+                              }
+                                
+                            })
+                            .catch(er => {
+                                res.json({
+                                    status: "failure",
+                                    message: "err requesting/decrypting the file from server",
+                                    errors: [er],
+                                    data: {}
+                                });
+                            })
+                        })
+                        .catch(errr => {
+                            res.json({
+                                status: "failure",
+                                message: "disk api err",
+                                errors: [{message: errr.message, name: errr.name}],
+                                data: {}
+                            });
+                        });
                     }
                 });
             } else {
@@ -474,154 +539,76 @@ const downloadMediaById = (req, res) => {
         });
     }
 }
-
-const downloadMediaUrlById = (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        status: "failure",
-        message: "validation error",
-        errors: errors.array(),
-        data: {}
-    });
-    } else {
-        Article.findOne( {uuid: req.user.uuid}, function(err, foundUser) {
-            if(!err && foundUser) {
-                foundUser.media.forEach(element => {
-                    if(element._id == req.body.id){
-                        res.redirect('downloadMediaUrl/'+element.name);
-                    }
-                });
-            } else {
-                res.json({
-                    status: "failure",
-                    message: "no media/user found",
-                    errors: [err],
-                    data: {}
-                });
-            }
-        });
-    }
-}
-
-const getMedia = (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        status: "failure",
-        message: "validation error",
-        errors: errors.array(),
-        data: {}
-    });
-    } else {
-        // if(req.params.username) {
-            axios.put('https://cloud-api.yandex.net/v1/disk/resources/publish', null, { params: { path: '/Syncure_data/'+req.user.uuid}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+   
+const downloadMedia = (req, res) => {
+    const uuid = req.user.uuid;
+    const media = req.params.media;
+    axios.get('https://cloud-api.yandex.net/v1/disk/resources/download', { params: { path: '/Syncure_data/'+req.user.uuid+'/'+req.params.media}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
             .then( response => {
-                // res.json(response);
-                axios.get('https://cloud-api.yandex.net/v1/disk/resources', { params: { path: '/Syncure_data/'+req.user.uuid, fields: 'name, public_url'}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
-                .then( result => {
-                    //const url_array = result.data.public_url.split("?");
-                    res.redirect(result.data.public_url+'/'+req.params.media);
+                axios.get(response.data.href)
+                .then(async result => {
+                  try {
+                    const toDecrypt = result.data;
+                    const test = toDecrypt.toString('utf8');
+                    const bytes  = AES.decrypt(test, process.env.AES_KEY);
+                    const originalText = bytes.toString(enc);
+                    
+                    fs.writeFileSync('./downloads/'+uuid+'/'+media, originalText, {encoding: 'base64'});
+                    await res.download('./downloads/'+uuid+'/'+media, err => {
+                        if(err) {
+                            res.json({
+                                status: "failure",
+                                message: "err downloading file",
+                                errors: [err],
+                                data: {}
+                            });
+                            fs.unlink('./downloads/'+uuid+'/'+media, er => {
+                                if(err) {
+                                    console.log(er);
+                                } else {
+                                    console.log("temp download link removed successfully");
+                                }
+                            });
+                        } else {
+                            fs.unlink('./downloads/'+uuid+'/'+media, er => {
+                                if(err) {
+                                    console.log(er);
+                                } else {
+                                    console.log("temp download link removed successfully");
+                                }
+                            });
+                        }
+                    });
+                  } catch (error) {
+                        res.json({
+                            status: "failure",
+                            message: "err decrypting the file from server",
+                            errors: [error],
+                            data: {}
+                        });
+                  }
+                    
                 })
-                .catch(err => {
+                .catch(er => {
                     res.json({
                         status: "failure",
-                        message: "disk api err",
-                        errors: [err],
+                        message: "err requesting/decrypting the file from server",
+                        errors: [er],
                         data: {}
-                    })
+                    });
                 })
             })
-            .catch(errr => {res.json({
-                status: "failure",
-                message: "disk api err",
-                errors: [errr],
-                data: {}
-            });});
-        // } else {
-        //     res.json({
-        //         status: "failure",
-        //         message: "unauthorised user",
-        //         errors: [],
-        //         data: {}
-        //     })
-        // }
-    }
-}
-
-const downloadMedia = (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        status: "failure",
-        message: "validation error",
-        errors: errors.array(),
-        data: {}
-    });
-    } else {
-        // if(req.params.username) {
-            axios.get('https://cloud-api.yandex.net/v1/disk/resources/download', { params: { path: '/Syncure_data/'+req.user.uuid+'/'+req.params.media}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
-            .then( response => {
-                // res.json(response);
-                res.redirect(response.data.href)
-            })
-            .catch(errr => {res.json({
-                status: "failure",
-                message: "disk api err",
-                errors: [errr],
-                data: {}
-            });});
-        // } else {
-        //     res.json({
-        //         status: "failure",
-        //         message: "unauthorised user",
-        //         errors: [],
-        //         data: {}
-        //     })
-        // }
-    }
-}
-
-const downloadMediaUrl = (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        status: "failure",
-        message: "validation error",
-        errors: errors.array(),
-        data: {}
-    });
-    } else {
-        // if(req.params.username) {
-            axios.get('https://cloud-api.yandex.net/v1/disk/resources/download', { params: { path: '/Syncure_data/'+req.user.uuid+'/'+req.params.media}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
-            .then( response => {
-                // res.json(response);
-                // res.redirect(response.data.href)
+            .catch(errr => {
                 res.json({
-                    status: "success",
-                    message: "url in data",
-                    errors: [],
-                    data: {
-                        url: response.data.href
-                    }
-                })
-            })
-            .catch(errr => {res.json({
-                status: "failure",
-                message: "disk api err",
-                errors: [errr],
-                data: {}
-            });});
-        // } else {
-        //     res.json({
-        //         status: "failure",
-        //         message: "unauthorised user",
-        //         errors: [],
-        //         data: {}
-        //     })
-        // }
-    }
+                    status: "failure",
+                    message: "disk api err",
+                    errors: [{message: errr.message, name: errr.name}],
+                    data: {}
+                });
+            });
 }
+
+
 
 const getMediaInfo = (req, res) => {
     const errors = validationResult(req);
@@ -692,5 +679,5 @@ const getMediaInfoById = (req, res) => {
 }
 
 module.exports = {
-    find, addMedia, addPassword, removeMedia, removePassword, findAllPasswords, findPassword, getMediaById, getMedia, downloadMedia, downloadMediaById, getMediaInfo, getMediaInfoById, downloadMediaUrl, downloadMediaUrlById
+    find, addMedia, addPassword, removeMedia, removePassword, findAllPasswords, findPassword, downloadMedia, downloadMediaById, getMediaInfo, getMediaInfoById
 }
