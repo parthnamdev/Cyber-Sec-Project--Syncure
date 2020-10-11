@@ -13,7 +13,7 @@ router.post('/verify/:username', [
     body('password', 'password should be minimum of 6 characters').isLength({min: 6}),
     body('totp','length of OTP should be 6').isLength(6)
     ], userController.twoFactorAuth);
-router.get('/resendUpdateEmail/:username', authenticate, userController.resendForEmailUpdate);
+router.get('/resendUpdateEmail', authenticate, userController.resendForEmailUpdate);
 router.post('/verifyMail', authenticate, [
     body('totp','length of OTP should be 6').isLength(6)
 ], userController.emailtwoFactorAuth);
