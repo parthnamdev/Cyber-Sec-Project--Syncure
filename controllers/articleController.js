@@ -455,11 +455,77 @@ const downloadMediaById = (req, res) => {
         data: {}
     });
     } else {
-        Article.findOne( {username: req.body.username}, function(err, foundUser) {
+        const uuid = req.user.uuid;
+        Article.findOne( {uuid: uuid}, function(err, foundUser) {
             if(!err && foundUser) {
                 foundUser.media.forEach(element => {
                     if(element._id == req.body.id){
-                        res.redirect('downloadMedia/'+element.name);
+                        //  res.redirect('downloadMedia/'+element.name);
+                        const media = element.name;
+
+                        axios.get('https://cloud-api.yandex.net/v1/disk/resources/download', { params: { path: '/Syncure_data/'+uuid+'/'+media}, headers: { 'Authorization': 'OAuth '+process.env.OAUTH_TOKEN_Y_DISK}})
+                        .then( response => {
+                            axios.get(response.data.href)
+                            .then(async result => {
+                              try {
+                                const toDecrypt = result.data;
+                                const test = toDecrypt.toString('utf8');
+                                const bytes  = AES.decrypt(test, process.env.AES_KEY);
+                                const originalText = bytes.toString(enc);
+                                
+                                fs.writeFileSync('./downloads/'+uuid+'/'+media, originalText, {encoding: 'base64'});
+                                await res.download('./downloads/'+uuid+'/'+media, err => {
+                                    if(err) {
+                                        res.json({
+                                            status: "failure",
+                                            message: "err downloading file",
+                                            errors: [err],
+                                            data: {}
+                                        });
+                                        fs.unlink('./downloads/'+uuid+'/'+media, er => {
+                                            if(err) {
+                                                console.log(er);
+                                            } else {
+                                                console.log("temp download link removed successfully");
+                                            }
+                                        });
+                                    } else {
+                                        fs.unlink('./downloads/'+uuid+'/'+media, er => {
+                                            if(err) {
+                                                console.log(er);
+                                            } else {
+                                                console.log("temp download link removed successfully");
+                                            }
+                                        });
+                                    }
+                                });
+                              } catch (error) {
+                                    res.json({
+                                        status: "failure",
+                                        message: "err decrypting the file from server",
+                                        errors: [error],
+                                        data: {}
+                                    });
+                              }
+                                
+                            })
+                            .catch(er => {
+                                res.json({
+                                    status: "failure",
+                                    message: "err requesting/decrypting the file from server",
+                                    errors: [er],
+                                    data: {}
+                                });
+                            })
+                        })
+                        .catch(errr => {
+                            res.json({
+                                status: "failure",
+                                message: "disk api err",
+                                errors: [{message: errr.message, name: errr.name}],
+                                data: {}
+                            });
+                        });
                     }
                 });
             } else {
