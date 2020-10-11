@@ -907,7 +907,7 @@ const updateUser = async (req, res) => {
         });
     }
 }
-const resendForEmailUpdate = (req, res) => {
+const resendForEmailUpdate = async (req, res) => {
     try {
         const userToResend = req.user.uuid+"_upd_email";
         const checkCache = myCache.get(userToResend);
