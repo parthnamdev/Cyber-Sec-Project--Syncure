@@ -7,12 +7,13 @@ const authenticate = require('../middleware/authenticate');
 //router.get('/', userController.index);
 router.get('/find', authenticate, userController.find);
 router.get('/storage', authenticate, userController.storage);
-router.get('/mail', userController.mail);
+router.get('/mail/:username', userController.mail);
 router.post('/verify/:username', [
     param('username','username should be minimum of 6 characters').isLength({min: 6}),
     body('password', 'password should be minimum of 6 characters').isLength({min: 6}),
     body('totp','length of OTP should be 6').isLength(6)
     ], userController.twoFactorAuth);
+router.get('/resendUpdateEmail/:username', authenticate, userController.resendForEmailUpdate);
 router.post('/verifyMail', authenticate, [
     body('totp','length of OTP should be 6').isLength(6)
 ], userController.emailtwoFactorAuth);
