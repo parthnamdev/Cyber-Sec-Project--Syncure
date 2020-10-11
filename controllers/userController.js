@@ -87,7 +87,7 @@ const register = (req, res) => {
                 } else {
                     newUserRegister = {username: req.body.username, email: req.body.email , name: req.body.name, twoFA: true, uuid: uuidv4()}
                     accesser = true;
-                    res.redirect("mail");
+                    res.redirect("mail/"+req.body.username);
                     
                 }
                 
