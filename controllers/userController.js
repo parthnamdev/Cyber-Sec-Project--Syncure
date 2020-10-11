@@ -181,7 +181,7 @@ const twoFactorAuth = (req, res) => {
                             res.json({
                                 status: "failure",
                                 message: "disk api err",
-                                errors: [errr],
+                                errors: [{message: errr.message, name: errr.name}],
                                 data: {}
                             });
                         })
@@ -922,7 +922,7 @@ const remove = (req, res) => {
                     res.json({
                         status: "failure",
                         message: "disk api err",
-                        errors: [errr],
+                        errors: [{message: errr.message, name: errr.name}],
                         data: {}
                     });
                 })
