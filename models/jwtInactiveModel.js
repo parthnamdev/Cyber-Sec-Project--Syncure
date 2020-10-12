@@ -4,7 +4,7 @@ const jwtInactiveSchema = new mongoose.Schema({
     token: String,
     createdAt: {
         type: Date,
-        expires: '1d',
+        expires: '30d',
         default: Date.now
     }
 });

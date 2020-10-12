@@ -222,7 +222,7 @@ const twoFactorAuth = (req, res) => {
                                             const jwtToken = jwt.sign(
                                                 { username: tempStoreUsername, uuid: tempStoreUUID },
                                                 process.env.JWT_SECRET,
-                                                { expiresIn: "15m" }
+                                                { expiresIn: "30d" }
                                               );
                                             console.log("successfully created local directory");
                                             res.json({

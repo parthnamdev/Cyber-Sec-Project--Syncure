@@ -68,7 +68,7 @@ const login = (req, res, next) => {
                     const token = jwt.sign(
                       { username: req.body.username, uuid: req.user.uuid },
                       process.env.JWT_SECRET,
-                      { expiresIn: "15m" }
+                      { expiresIn: "30d" }
                     );
                     res.json({
                       status: "success",
@@ -208,7 +208,7 @@ const twoStepVerification = (req, res) => {
     const token = jwt.sign(
       { username: req.params.username, uuid: req.user.uuid },
       process.env.JWT_SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "30d" }
     );
     res.json({
       status: "success",
