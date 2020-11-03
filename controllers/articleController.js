@@ -474,7 +474,7 @@ const downloadMediaById = (req, res) => {
                                 const originalText = bytes.toString(enc);
                                 
                                 fs.writeFileSync('./downloads/'+uuid+'/'+media, originalText, {encoding: 'base64'});
-                                await res.download('./downloads/'+uuid+'/'+media, err => {
+                                await res.download('./downloads/'+uuid+'/'+media, media, err => {
                                     if(err) {
                                         res.json({
                                             status: "failure",
@@ -554,7 +554,7 @@ const downloadMedia = (req, res) => {
                     const originalText = bytes.toString(enc);
                     
                     fs.writeFileSync('./downloads/'+uuid+'/'+media, originalText, {encoding: 'base64'});
-                    await res.download('./downloads/'+uuid+'/'+media, err => {
+                    await res.download('./downloads/'+uuid+'/'+media, media, err => {
                         if(err) {
                             res.json({
                                 status: "failure",
